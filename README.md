@@ -69,14 +69,14 @@ Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights m
 **Words used this week.** *Thread*: one copy of your kernel running on one element. *Simdgroup*: 32 threads that execute the same instruction at the same time; they can pass values to each other without touching memory. *Threadgroup*: a bundle of simdgroups that can share a small on-chip memory. *Grid*: all the threads of one kernel launch. *Unified memory*: the CPU and GPU use the same RAM, so there is no copy step, but the bandwidth limit still applies. *GEMV*: matrix times vector, the shape of every decode step.
 
 **Mon · How does an Apple GPU run my code?**
-1. 10 min. Read [gpu-core](https://metalworking.vercel.app/machine/gpu-core/) and [simdgroup](https://metalworking.vercel.app/machine/simdgroup/) on metalworking. Goal: be able to draw thread, simdgroup, threadgroup, grid as four nested boxes.
-2. 12 min. Read the first example in [MLX custom Metal kernels](https://ml-explore.github.io/mlx/build/html/dev/custom_metal_kernels.html). Find the two lines that set `grid` and `threadgroup`. Work out how many simdgroups that launch has.
+1. 10 min. Read the dispatch-model part of the [WWDC22 "Scale compute workloads across Apple GPUs" transcript](https://developer.apple.com/videos/play/wwdc2022/10159/) from about 04:55: grid of threadgroups, threadgroups split into SIMD-groups, up to 1024 threads and 32K threadgroup memory per threadgroup. Then your own [gpu-core](https://metalworking.vercel.app/machine/gpu-core/) and [simdgroup](https://metalworking.vercel.app/machine/simdgroup/). Goal: draw thread, simdgroup, threadgroup, grid as four nested boxes.
+2. 12 min. Read the first example in the [MLX custom Metal kernels doc, .rst source](https://raw.githubusercontent.com/ml-explore/mlx/main/docs/src/dev/custom_metal_kernels.rst) (the raw file, not the rendered page, which buries the text under a 1500-line sidebar). The one rule that trips CUDA people: you pass only the kernel *body*, the signature is generated. Find the two lines that set `grid` and `threadgroup`. Work out how many simdgroups that launch has.
 3. 8 min. `/learn read` on what you just read: blurt it back with the pages closed, write the cards.
-Skip today: [threadgroup-memory](https://metalworking.vercel.app/machine/threadgroup-memory/), [unified-memory](https://metalworking.vercel.app/machine/unified-memory/), and [metal-benchmarks](https://github.com/philipturner/metal-benchmarks). They are references for when a number surprises you later this week.
+Skip today: [threadgroup-memory](https://metalworking.vercel.app/machine/threadgroup-memory/) and [unified-memory](https://metalworking.vercel.app/machine/unified-memory/). They are references for when a number surprises you later this week.
 
 **Tue · How wide should a threadgroup be?**
 1. 5 min. Write `sessions/w01-tue.md`. Prediction: which threadgroup width (32 to 1024) and elements-per-thread (1 to 8) reaches the highest GB/s on a plain copy kernel, and why.
-2. 5 min. Run `python -c "import bench; bench.probe()"` once. That number is the machine's copy roof.
+2. 5 min. Run `python -c "import bench; bench.probe()"` once. That number is the machine's copy roof. Compare it with the two On-Chip Memory tables in the [metal-benchmarks README](https://github.com/philipturner/metal-benchmarks), which put Apple next to Ampere and RDNA in one table. Those tables stop at M2, so expect the M5 to differ.
 3. 15 min. Ask Claude for a copy kernel in `mx.fast.metal_kernel` with width and elements-per-thread as parameters, and a sweep over both using `bench.paired`. Read the sweep table.
 4. 5 min. Fill in "After": where was your prediction wrong, and what does [dispatch-geometry](https://metalworking.vercel.app/metal/dispatch-geometry/) say about why.
 
@@ -84,7 +84,7 @@ Skip today: [threadgroup-memory](https://metalworking.vercel.app/machine/threadg
 1. 5 min. `sessions/w01-wed.md`. Shape: W is [N, K] in bf16, x is [K]. Predict the time from bytes moved (N times K times 2) divided by Tuesday's roof.
 2. 5 min. Read [mx.fast](https://metalworking.vercel.app/mlx/mx-fast/) up to the metal_kernel section, so the Ask uses the right words.
 3. 15 min. Ask Claude for the GEMV, one simdgroup per output row, `simd_sum` for the dot product. Baseline: `mx.matmul`. Run `bench.paired` with `bytes_moved` set, and read the roofline percent.
-4. 5 min. Capture it: `mx.metal.start_capture("w01.gputrace")`, open in Xcode, find the kernel's duration. [profiling](https://metalworking.vercel.app/metal/profiling/) explains what Xcode will and will not show you.
+4. 5 min. Capture it. The [MLX Metal debugger doc](https://raw.githubusercontent.com/ml-explore/mlx/main/docs/src/dev/metal_debugger.rst) states the two preconditions people miss: run with `MTL_CAPTURE_ENABLED=1`, then `mx.metal.start_capture("w01.gputrace")`. Open in Xcode, find the kernel's duration in the Dependencies view. [profiling](https://metalworking.vercel.app/metal/profiling/) explains what Xcode will and will not show you. If the timing method itself feels shaky, [aurelbzo/mlx-metal-kernels](https://github.com/aurelbzo/mlx-metal-kernels) is a learning repo on the same API with a harness that reports medians and median absolute deviation.
 
 **Thu · Hand-write, no AI**
 1. 15 min. `kernels/w01/thu_vadd.metal`: add two arrays, one element per thread. From memory. Only the [msl](https://metalworking.vercel.app/metal/msl/) page is open.
@@ -98,117 +98,278 @@ If `thu_vadd` does not compile in 15 minutes, stop there. The compiler error goe
 
 ### Week 2 · int4 and fused dequant
 
-**Deliverable.** A fused int4 GEMV that matches `mx.quantized_matmul` numerically and within 10 percent of its speed at M=1.
+**By Friday you can say:** MLX stores a 4-bit weight as a nibble inside a 32-bit word, eight per word, with one scale and one bias per group of 64. A fused kernel reads the packed words, multiplies the nibbles against a pre-scaled activation so it never has to shift them out, and adds the bias term once per group from a running sum of the activation. The result moves one quarter of the bytes of a bf16 matvec and should be close to four times faster at M=1.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · MLX affine quantization: `bits`, `group_size`, per-group scale and bias, and the packed layout. Source: [mx.quantize](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.quantize.html) and [mx.quantized_matmul](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.quantized_matmul.html) docs, then the packing code in `mlx/backend/metal/kernels/quantized.h` (read only). Pre-read: [quantization](https://metalworking.vercel.app/mlx/quantization/). |
-| Tue | *apply* · Dequant-only kernel: int4 to bf16 for one row. Predict bytes in, bytes out, and time from the week 1 bandwidth. Pre-read: [decode-vs-prefill](https://metalworking.vercel.app/techniques/decode-vs-prefill/). |
-| Wed | *build* · Fused dequant GEMV, group_size 64, 4 bits. Baseline: `mx.quantized_matmul`. Parity: max abs error against `mx.dequantize` then `mx.matmul`. Pre-read: [fusion-and-epilogues](https://metalworking.vercel.app/techniques/fusion-and-epilogues/). |
-| Thu | *hand* · `thu_dequant.metal`: unpack and dequantize one group of 64 by hand. |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *Affine quantization*: store `w ≈ s·q + β` where q is a small integer, s the scale, β the bias. *Group*: the run of 64 weights that share one s and one β. *Packing*: eight 4-bit values in one uint32, first value in the four least significant bits. *Fused dequant*: converting q back to a float inside the matvec kernel instead of writing a bf16 matrix out first. *Nibble*: a 4-bit value.
+
+**Mon · How does MLX store an int4 weight?**
+1. 10 min. Read the [mx.quantize docstring](https://raw.githubusercontent.com/ml-explore/mlx/main/python/src/ops.cpp) (search for `def quantize`, around line 4800). It has the α, β, s formula, the packing order, and a table of the four modes (affine, mxfp4, nvfp4, and the default marked with `*`). Then your own [quantization](https://metalworking.vercel.app/mlx/quantization/).
+2. 12 min. In Python: quantize a [64, 128] bf16 matrix with `mx.quantize(w, group_size=64, bits=4)`, print the shapes of the three outputs, and unpack the first uint32 by hand with shifts and masks until you recover the first eight weights through `mx.dequantize`.
+3. 8 min. `/learn read`: blurt the format back, cards.
+
+**Tue · How many bytes does dequant move?**
+1. 5 min. `sessions/w02-tue.md`. Predict bytes in and bytes out for dequantizing one [N, K] int4 matrix to bf16, and the time from week 1's roof.
+2. 5 min. Read the `block_q4_0` struct in [llama.cpp's ggml-common.h](https://raw.githubusercontent.com/ggml-org/llama.cpp/master/ggml/src/ggml-common.h): 32 weights, one fp16 scale, no bias, 18 bytes. That is the contrast case: scale-only vs MLX's scale-and-bias.
+3. 15 min. Ask Claude for a dequant-only kernel in `metal_kernel`, one thread per packed word. Baseline: `mx.dequantize`. Run `bench.paired` with `bytes_moved`.
+4. 5 min. "After". [decode-vs-prefill](https://metalworking.vercel.app/techniques/decode-vs-prefill/) if you want to re-anchor why bytes are the whole story at M=1.
+
+**Wed · The fused int4 GEMV**
+1. 5 min. `sessions/w02-wed.md`. Predict the speedup over week 1's bf16 GEMV from the byte ratio alone, then predict the gap to `mx.quantized_matmul`.
+2. 10 min. Read `load_vector` in [MLX's quantized.h](https://raw.githubusercontent.com/ml-explore/mlx/main/mlx/backend/metal/kernels/quantized.h). The trick: it pre-scales the activation by 1/4, 1/16, 1/64 so the packed nibbles never need shifting out, and it accumulates `sumy` so the bias term costs one multiply per group. [fusion-and-epilogues](https://metalworking.vercel.app/techniques/fusion-and-epilogues/) names the general pattern.
+3. 12 min. Ask Claude for the fused GEMV, group_size 64, 4 bits, using that pre-scale trick. Baseline: `mx.quantized_matmul`. Parity: max abs error against `mx.dequantize` then `mx.matmul`.
+4. 3 min. "After", including the roofline percent.
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w02/thu_dequant.metal`: unpack and dequantize one group of 64 from eight uint32 words, with scale and bias, writing 64 bf16 values. From memory. Say "done".
+
+**Fri · Judge**
+1. 10 min. `/learn review`, then `/learn session` on `kernels/w02/` with files closed. Explain why the activation is pre-scaled and where the bias term goes.
+2. 10 min. Cards from the misses.
+3. 10 min. README row, tick week 2.
 
 ### Week 3 · small-M and occupancy
 
-**Deliverable.** A batched quantized matvec at M=1, 4, 8 that matches or beats MLX at each, with an explanation of where the stock kernel stalls.
+**By Friday you can say:** a matvec kernel assigns rows to simdgroups and splits K across lanes. At M=1 the kernel is bandwidth-bound and the stock MLX kernel is near the roof. At M=3 to 6 the stock kernel stalls because the work per weight load is too small to hide latency and too large for the matvec layout, and a batched variant that reuses each loaded weight across M activations fixes it. Occupancy, the number of simdgroups resident per core, is what you trade for registers.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · Read MLX's quantized matvec kernels in `quantized.h` (the `qmv` family) for how they split K and assign rows to simdgroups. Registers per thread vs occupancy on Apple GPUs: the register file section of metal-benchmarks. Pre-read: [occupancy](https://metalworking.vercel.app/machine/occupancy/), [registers](https://metalworking.vercel.app/machine/registers/). |
-| Tue | *apply* · Occupancy microbench: same kernel with 32, 64, 128 live floats per thread. Predict the cliff. |
-| Wed | *build* · Batched qmv. Baseline: `mx.quantized_matmul` at M=1, 4, 8. The M=3 to 6 stall reported by MTPLX is the target; a 10-line fix gave them 2.24x. Pre-read: [cheap-tricks](https://metalworking.vercel.app/war-stories/cheap-tricks/). |
-| Thu | *hand* · `thu_tiled_load.metal`: coalesced tiled load of a [64,64] bf16 tile into threadgroup memory. Pre-read: [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/), [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/). |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *M*: the number of activation rows, equal to the number of sequences decoding at once. *Occupancy*: how many simdgroups a core keeps resident to hide memory latency. *Register pressure*: live values per thread; past a cliff the compiler spills or occupancy drops. *K-split*: cutting the reduction dimension across lanes and summing with simd_sum. *Coalesced load*: adjacent threads reading adjacent addresses in one transaction.
+
+**Mon · How does MLX's own matvec work, and where does it stall?**
+1. 15 min. Read `qmv_fast` in [quantized.h](https://raw.githubusercontent.com/ml-explore/mlx/main/mlx/backend/metal/kernels/quantized.h): how many rows per simdgroup, how K is split across lanes, where `simd_sum` happens. Write the thread-to-data mapping as a one-line sketch.
+2. 7 min. Your own [occupancy](https://metalworking.vercel.app/machine/occupancy/) and [registers](https://metalworking.vercel.app/machine/registers/). Then the register-file row of the [metal-benchmarks](https://github.com/philipturner/metal-benchmarks) On-Chip Memory table (about 208 KB per core on M1/M2).
+3. 8 min. `/learn read`, cards.
+
+**Tue · Where is the register cliff?**
+1. 5 min. `sessions/w03-tue.md`. Predict at how many live floats per thread the kernel slows down, and why.
+2. 20 min. Ask Claude for the same copy kernel with 32, 64, 128 live floats per thread held in a register array, timed with `bench.paired`. Read the sweep.
+3. 5 min. "After".
+
+**Wed · Batched qmv at M=1, 4, 8**
+1. 5 min. `sessions/w03-wed.md`. Predict time at M=1, 4, 8 for the stock kernel and for a batched kernel that loads each packed word once and uses it for all M rows.
+2. 5 min. Second opinion on the layout: `kernel_mul_mv_q4_0_f32` and `block_q_n_dot_y` in [llama.cpp's mul_mv.metal](https://raw.githubusercontent.com/ggml-org/llama.cpp/master/ggml/src/ggml-metal/kernels/mul_mv.metal). The war story [cheap-tricks](https://metalworking.vercel.app/war-stories/cheap-tricks/) is the same lesson from your own glossary.
+3. 15 min. Ask Claude for the batched kernel. Baseline: `mx.quantized_matmul` at M=1, 4, 8. The M=3 to 6 stall reported by MTPLX is the target; a 10-line fix gave them 2.24x.
+4. 5 min. "After", three rows.
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w03/thu_tiled_load.metal`: coalesced load of a [64, 64] bf16 tile from device memory into threadgroup memory, each thread loading a contiguous float4. From memory. [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/) and [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/) are the reference pages allowed open. Say "done".
+
+**Fri · Judge**
+1. 10 min. `/learn review`, `/learn session` on `kernels/w03/`. Explain the stall and the fix without the code.
+2. 10 min. Cards.
+3. 10 min. README rows for M=4 and M=8, tick week 3.
 
 ### Week 4 · NVIDIA port
 
-**Deliverable.** A Triton int4 GEMV on an H100 benchmarked against Marlin, and the PTX it compiles to, read and annotated.
+**By Friday you can say:** Triton compiles a Python kernel through three intermediate representations to PTX, NVIDIA's portable assembly, and then to SASS, the real machine code. You can dump all five with `compiled_kernel.asm`, read the PTX for the vector loads and async copies you expected, and tell from the SASS whether the compiler did what you asked. The int4 GEMV on an H100 loses to Marlin because Marlin's weight layout was designed so that the dequant and the tensor-core load line up.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · [Modal GPU guide](https://modal.com/docs/guide/gpu) hello world on H100. Then the [Triton tutorials](https://triton-lang.org/main/getting-started/tutorials/index.html) vector add and matmul, and dump the PTX (`kernel.asm["ptx"]`). Reference for what good looks like: [Marlin](https://github.com/IST-DASLab/marlin). |
-| Tue | *apply* · Vectorized vs scalar global loads, then `cp.async`. Sources: [PTX ISA](https://docs.nvidia.com/cuda/parallel-thread-execution/) sections on `ld.global.v4` and `cp.async`. Predict the bandwidth ratio. |
-| Wed | *build* · Triton int4 GEMV, group_size 64. Baseline: Marlin's kernel at M=1 and M=8. Profile with [Nsight Compute](https://docs.nvidia.com/nsight-compute/) on Modal. |
-| Thu | *hand* · `thu_ptx_load.cu`: a CUDA kernel with one inline PTX `ld.global.v4.b32`, from memory. |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *PTX*: NVIDIA's intermediate assembly, stable across GPU generations. *SASS*: the per-architecture machine code PTX compiles to. *cp.async*: an instruction that copies global memory to shared memory without staging through registers. *num_stages*: how many tiles Triton's software pipeline keeps in flight. *Marlin*: the reference int4 GEMM kernel from IST Austria that holds its speed up to batch 16 to 32.
+
+**Mon · What did Triton actually emit?**
+1. 5 min. Modal hello world on an H100 from the [Modal GPU guide](https://modal.com/docs/guide/gpu). Save the function decorator; it is reused for six weeks.
+2. 20 min. [GPU MODE Lecture 29, Triton Internals](https://github.com/gpu-mode/lectures/tree/main/lecture_029), slides "Example: add_kernel (Artifacts)" and "(JIT Compiled)". Run the deck's `vector_add.py` on the H100, print `compiled_kernel.asm.keys()`, open the PTX, and find the load and store. Then the "Triton GPU Passes" slides: the line `add_pipeline(pm, opt.num_stages)` is the whole lesson that num_stages is a knob to a pipelining pass, not a hardware fact. All five IRs side by side are in [the linked gist](https://gist.github.com/kapilsh/e8f09e8ed4f2f3bcfe13dd4bd099e270).
+3. 5 min. `/learn read`, cards. If Triton itself is cold, the first three [Triton Puzzles](https://github.com/srush/Triton-Puzzles) are the warm-up on a buffer day.
+
+**Tue · Vectorized loads and cp.async**
+1. 5 min. `sessions/w04-tue.md`. Predict the bandwidth ratio of 16-byte vector loads over 4-byte scalar loads, and what cp.async adds.
+2. 10 min. PTX ISA syntax blocks only: [9.7.10.8 ld](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-ld) for `.v4`, and [9.7.10.28.3.1 cp.async](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-async) for `cp-size = {4, 8, 16}` plus commit_group and wait_group. Then [CUDA Binary Utilities §2.1.1](https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html) for `cuobjdump -sass -ptx`.
+3. 12 min. Ask Claude for a Triton copy kernel at three block sizes, dump the PTX, and confirm the `.v4` load appears. Time it against `torch.clone`.
+4. 3 min. "After".
+
+**Wed · Triton int4 GEMV vs Marlin**
+1. 5 min. `sessions/w04-wed.md`. Predict the gap to Marlin at M=1 and M=8 and name the reason.
+2. 10 min. [Marlin README](https://github.com/IST-DASLab/marlin): the FLOP-per-byte argument (why a naive int4 kernel loses its advantage past batch 1 to 2) and the striped partitioning plus double buffering that extend it to "batchsizes 4-8x larger".
+3. 12 min. Ask Claude for the Triton int4 GEMV, group_size 64, same format as week 2. Baseline: Marlin at M=1 and M=8. Dump the PTX and find the dequant.
+4. 3 min. "After". Inline asm in Triton, if the dequant needs it: [tl.inline_asm_elementwise](https://triton-lang.org/main/python-api/generated/triton.language.inline_asm_elementwise.html), note `pack` and that Triton uses `$n` where CUDA uses `%n`.
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w04/thu_ptx_load.cu`: a CUDA kernel with one inline `ld.global.v4.b32`, from memory. Reference allowed open: [Inline PTX Assembly in CUDA](https://docs.nvidia.com/cuda/inline-ptx-assembly/index.html) §1.1 for the constraint syntax and the `%%` escape, §1.2 Pitfalls for `asm volatile` and the memory clobber. Say "done"; Claude compiles it on Modal and reports.
+
+**Fri · Judge**
+1. 10 min. `/learn review`, `/learn session` on `kernels/w04/`. Explain, PTX closed, what the compiler did with your block size.
+2. 10 min. Cards.
+3. 10 min. README rows, tick week 4.
 
 ### Week 5 · compare and ship
 
-**Deliverable.** The arc 1 comparison table, the writeup, and the entry ticket to mlx-lm.
+**By Friday you can say:** the same kernel profiled on both platforms gives different kinds of evidence. Nsight Compute shows pipe utilization, warp stall reasons, and memory workload with hardware counters. Xcode's shader profiler shows timing and occupancy but has no counter-level view, so on Apple you reason from the roofline and from experiments. You know how to run Nsight headless and what breaks on a rented GPU.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · Same kernel, two profilers. What Nsight Compute shows that Xcode's shader profiler does not, and the reverse. Pre-read: [profiling](https://metalworking.vercel.app/metal/profiling/). |
-| Tue | *apply* · Fill the comparison table below: both platforms, percent of roofline, M=1, 4, 8. |
-| Wed | *build* · Arc 1 writeup: what was tried, what failed, the table, the honest ceiling. Pre-read: [the-failures](https://metalworking.vercel.app/war-stories/the-failures/). |
-| Thu | *hand* · `thu_gemv.cu`: bf16 GEMV in CUDA from memory, timed. |
-| Fri | *ship* · One small pull request or benchmark-backed issue to [mlx-lm](https://github.com/ml-explore/mlx-lm), written by me, no AI footer. This opens the contributor gate for week 10. Then the arc blurt. |
+**Words used this week.** *Nsight Compute (ncu)*: NVIDIA's kernel profiler with hardware counters. *Warp stall reason*: why a warp did not issue an instruction in a cycle. *ERR_NVGPUCTRPERM*: the error when a container lacks permission to read GPU counters. *Gigainstructions*: instruction throughput, a better score than GFLOPS on Apple GPUs.
+
+**Mon · Two profilers, one kernel**
+1. 15 min. [Nsight Compute Profiling Guide](https://docs.nvidia.com/nsight-compute/ProfilingGuide/index.html), three sections: ComputeWorkloadAnalysis, SchedulerStats, MemoryWorkloadAnalysis. "Having many skipped issue slots indicates poor latency hiding" is the sentence to remember.
+2. 10 min. [Nsight Compute CLI](https://docs.nvidia.com/nsight-compute/NsightComputeCli/index.html): `--set full --export`, and the gotcha "if --page is not used but --export is, no results will be printed". Then [ERR_NVGPUCTRPERM](https://developer.nvidia.com/ERR_NVGPUCTRPERM): containers need `--cap-add=SYS_ADMIN` or host-side caps; the old `NVreg_RestrictProfilingToAdminUsers=0` regkey is now the legacy method. Whether Modal's sandbox allows counters is unknown; Tuesday finds out.
+3. 5 min. `/learn read`, cards. Your own [profiling](https://metalworking.vercel.app/metal/profiling/) for the Apple side.
+
+**Tue · Fill the table**
+1. 5 min. `sessions/w05-tue.md`. Predict the percent of roofline on each platform before you look.
+2. 20 min. Run `ncu --set full --export w04 --page details` on the week 4 kernel on Modal. If it fails with ERR_NVGPUCTRPERM, record that as the finding and fall back to `torch.cuda.Event` timing plus the roofline. On the Mac, rerun the week 3 kernel at M=1, 4, 8 with fans pinned and apps closed, and capture it.
+3. 5 min. Fill the arc 1 comparison table below.
+
+**Wed · Arc 1 writeup**
+1. 5 min. Read "Quantifying Performance" in the [metal-flash-attention README](https://github.com/philipturner/metal-flash-attention): why it reports gigainstructions instead of GFLOPS, and that Apple has no native fp32 atomics. Your own [the-failures](https://metalworking.vercel.app/war-stories/the-failures/) before writing anything.
+2. 25 min. Write `writeups/arc1.md`: what was tried, what failed, the table, the honest ceiling, both machines named with dates.
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w05/thu_gemv.cu`: bf16 GEMV in CUDA, one warp per row, warp shuffle reduction, from memory. Say "done"; Claude compiles and times it on Modal.
+
+**Fri · Ship**
+1. 15 min. One small pull request or benchmark-backed issue to [mlx-lm](https://github.com/ml-explore/mlx-lm), written by you, no AI footer. This opens the contributor gate for week 10.
+2. 15 min. Arc blurt: `/learn session` across weeks 1 to 5, cards, tick week 5.
 
 ---
 
 ## Arc 2 · the prefill path: chunkwise gated delta (weeks 6 to 10)
 
-mlx-lm runs every linear-attention model through one file, [gated_delta.py](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/models/gated_delta.py), whose kernel is a token-sequential scan: parallel over batch, heads, and head-dim, serial over T. The chunkwise formulation ([FLA](https://github.com/fla-org/flash-linear-attention), [Gated Delta Networks](https://arxiv.org/abs/2412.06464)) turns a length-T scalar scan into T/C dense matmul steps. A working version of this kernel already exists in `~/myproj/apple_job_track/code/chunkwise/chunk_kernel_v7.py`, built by AI sessions I steered. This arc rebuilds it from the math up so that I own it; v7 is the answer key, not the starting point.
+mlx-lm runs every linear-attention model through one file, [gated_delta.py](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/models/gated_delta.py), whose kernel is a token-sequential scan: parallel over batch, heads, and head-dim, serial over T. The chunkwise formulation turns a length-T scalar scan into T/C dense matmul steps. A working version of this kernel already exists in `~/myproj/apple_job_track/code/chunkwise/chunk_kernel_v7.py`, built by AI sessions I steered. This arc rebuilds it from the math up so that I own it; v7 is the answer key, not the starting point.
+
+Blast radius, verified from the model cards and config files: Qwen3-Next (36 of 48 layers), the Qwen3.5 family (3 linear layers to 1 full-attention layer), and Kimi Linear (3:1 KDA to MLA) all use this path with dk = dv = 128, 16 key heads, 32 value heads, chunk size 64. A kernel for that shape with a scalar gate covers Qwen; the vector gate covers Kimi.
 
 ### Week 6 · the math
 
-**Deliverable.** An fp64 chunked reference and a frozen tolerance contract, plus the sequential scan written by hand as the baseline.
+**By Friday you can say:** the delta rule updates a d_k by d_v state matrix S so that S·k_t moves toward v_t, which is one step of online least squares. The gate α_t decays S before the update. The chunkwise form splits T into chunks of C, computes all C outputs of a chunk with dense matmuls plus one unit-lower-triangular solve, and carries the state between chunks sequentially, so the sequential work drops from T steps to T/C steps. You know which notation convention you are using.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · Gated delta rule recurrence. Chunkwise algebra: cumulative decays in log space, the unit-lower-triangular solve (UT transform), chunk-end state carry. Why the scan loses past T=1024. Sources: the paper above, FLA's `chunk.py` in `fla/ops/gated_delta_rule/`, and [FlashQLA](https://github.com/QwenLM/FlashQLA) as prior art. Pre-read: [arithmetic-intensity](https://metalworking.vercel.app/techniques/arithmetic-intensity/), [tiling](https://metalworking.vercel.app/techniques/tiling/). |
-| Tue | *apply* · Time mlx-lm's scan at T=512, 1024, 4096, 8192 for the vector-gate shape (B=1, Hk=16, Hv=32, Dk=Dv=128). Predict the scaling exponent. Pre-read: [lazy-evaluation](https://metalworking.vercel.app/mlx/lazy-evaluation/). |
-| Wed | *build* · fp64 chunked reference in numpy, NMSE tolerance per dtype frozen before any Metal code. Contract: fp32 accumulation, fast math off, no atomics, log-space decays. |
-| Thu | *hand* · `thu_scan.metal`: the sequential gated-delta scan, one simdgroup per (head, value row), from memory. This is the baseline everything is measured against. |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *State S*: the d_k by d_v matrix the layer carries instead of a KV cache. *Delta rule*: `S ← S + β (v − S k) kᵀ`, correct the stored value for key k by the error. *Gate α (or g)*: a per-token decay in (0, 1), stored in log space. *Chunk*: C consecutive tokens, C = 64 in every production model. *UT transform*: the unit-lower-triangular solve that turns C sequential corrections into one matrix. *Scan*: the sequential per-token loop the current mlx-lm kernel runs.
+
+**Mon · What is the delta rule?**
+1. 12 min. [DeltaNet Explained, Part I](https://sustcsonglin.github.io/blog/2024/deltanet-1/) by Songlin Yang, sections "What is Delta Rule?" through "Why is DeltaNet Superior at In-context Retrieval". Run the three-line NumPy update it gives.
+2. 10 min. [Gated DeltaNet paper §3.1](https://arxiv.org/html/2412.06464v1): the SGD framing, `L(S) = ½‖S k − v‖²`, Eq. 8 with the gate, and Table 1 which lines up five linear-attention variants as five objectives. Your own [arithmetic-intensity](https://metalworking.vercel.app/techniques/arithmetic-intensity/) and [tiling](https://metalworking.vercel.app/techniques/tiling/) are the background for Tuesday.
+3. 8 min. `/learn read`, cards.
+
+**Tue · Why does the scan lose, and what replaces it?**
+1. 5 min. `sessions/w06-tue.md`. Predict how the mlx-lm scan's time scales with T at the vector-gate shape (B=1, Hk=16, Hv=32, Dk=Dv=128), and the exponent.
+2. 15 min. [DeltaNet Explained, Part II](https://sustcsonglin.github.io/blog/2024/deltanet-2/): "Parallel Scan for DeltaNet: A Failed Attempt" first, then "A Chunkwise Algorithm for DeltaNet" and "UT Transform Through the Lens of Graph Theory", which explains the triangular inverse as a sum over paths. This part is ungated; Wednesday adds the gates.
+3. 8 min. Ask Claude to time mlx-lm's scan at T = 512, 1024, 4096, 8192. Your own [lazy-evaluation](https://metalworking.vercel.app/mlx/lazy-evaluation/) explains why every iteration must be evaluated.
+4. 2 min. "After".
+
+**Wed · The reference and the contract**
+1. 5 min. `sessions/w06-wed.md`. Write down the convention you will use for the whole arc: GDN applies the transition on the right, `S_t = S_{t-1}(α(I − βkkᵀ)) + βvkᵀ`; Kimi Linear writes it on the left with `kvᵀ`. Same math, transposed. Pick GDN's, because FLA and mlx-lm use it.
+2. 12 min. [FLA's naive.py](https://raw.githubusercontent.com/fla-org/flash-linear-attention/main/fla/ops/gated_delta_rule/naive.py), 161 lines, both functions. Lines 127 to 133 are the cumsum of log gates and the forward-substitution loop; lines 148 to 153 are the pseudo-value and the carry. Run it at C=4 and print every intermediate. Then GDN §3.2 Eq. 11 and 12 to match the names, and Appendix A.1 for the γ-ratio induction (its `P_t` line has an α subscript typo; the induction above it is right).
+3. 10 min. Ask Claude for an fp64 numpy chunked reference built from naive.py, and freeze the tolerance: NMSE per dtype against the fp64 sequential reference, fp32 accumulation, fast math off, log-space decays.
+4. 3 min. "After".
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w06/thu_scan.metal`: the sequential gated-delta scan, one simdgroup per (head, value row), lane-held state, from memory. This is the baseline everything is measured against. Reference allowed open: the three docstrings in [mlx-lm's gated_delta.py](https://raw.githubusercontent.com/ml-explore/mlx-lm/main/mlx_lm/models/gated_delta.py) (lines 568 to 573 give the scalar vs vector gate shapes) and `compute_g` at line 19. Say "done".
+
+**Fri · Judge**
+1. 10 min. `/learn review`, `/learn session`. Explain the chunkwise form on paper with C=2.
+2. 10 min. Cards.
+3. 10 min. README row for the hand scan, tick week 6.
 
 ### Week 7 · simdgroup_matrix and the intra-chunk solve
 
-**Deliverable.** A single-chunk kernel (C=64) that matches the fp64 reference within tolerance.
+**By Friday you can say:** `simdgroup_matrix<T, 8, 8>` is an 8 by 8 tile held across the 32 lanes of a simdgroup, two elements per lane, multiplied by one instruction. A chunk of C=64 with d=128 is a 64 by 128 block, so the intra-chunk matmuls are tiled from these 8 by 8 pieces, and the number of tiles one simdgroup holds live is the register budget. Apple's own guide names the three decisions: threadgroup tile, simdgroup tile, walk order.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · `simdgroup_matrix<T,8,8>`: load, multiply, store, and the layout it wants. The register cliff: what happens to occupancy when a simdgroup holds too many 8x8 tiles. Source: the simdgroup matrix section of the [Metal Shading Language spec](https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf), and [metal-flash-attention](https://github.com/philipturner/metal-flash-attention) for a production use. Pre-read: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/), [register-blocking](https://metalworking.vercel.app/techniques/register-blocking/). |
-| Tue | *apply* · 8x8 simdgroup_matrix throughput microbench. Predict TFLOPs vs the machine's published peak. Pre-read: [nax-gemm](https://metalworking.vercel.app/kernels/nax-gemm/). |
-| Wed | *build* · Single-chunk kernel: intra-chunk decays, UT solve, outputs, chunk-end state. Gate against the fp64 reference. Pre-read: [steel-blockmma](https://metalworking.vercel.app/kernels/steel-blockmma/). |
-| Thu | *hand* · `thu_sgmm.metal`: one 8x8 simdgroup_matrix multiply-accumulate, from memory. Pre-read: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/). |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *simdgroup_matrix*: Metal's 8 by 8 matrix fragment type with a hardware multiply. *Fragment*: the per-lane slice of a tile, two elements here. *Intra-chunk*: the work inside one chunk that needs no state from other chunks. *WY / UT representation*: writing the product of C rank-1 updates as two small matrices W and U. *Register cliff*: the tile count past which the compiler spills to memory.
+
+**Mon · Apple's own tiling chapter**
+1. 20 min. [Metal Performance Primitives Programming Guide](https://developer.apple.com/download/files/Metal-Performance-Primitives-Programming-Guide.pdf), March 2026, §2.2 to 2.3 (pages 6 to 9): threadgroup tile size, simdgroup tile size, Morton walk order, accumulation-loop synchronization, static extents. Then §4.1 for the theoretical analysis. Your own [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/) and [register-blocking](https://metalworking.vercel.app/techniques/register-blocking/).
+2. 10 min. `/learn read`, cards.
+
+**Tue · How fast is one 8x8 multiply?**
+1. 5 min. `sessions/w07-tue.md`. Predict TFLOPs for a kernel that does nothing but 8 by 8 multiply-accumulates, against the machine's published peak.
+2. 10 min. `BaseMMAFrag<T, 8, 8>` in [MLX's steel mma.h](https://raw.githubusercontent.com/ml-explore/mlx/main/mlx/backend/metal/kernels/steel/gemm/mma.h): `kElemsPerFrag = 64 / 32`, `kElemRows = 1, kElemCols = 2` is the fact that makes the layout click. Your own [nax-gemm](https://metalworking.vercel.app/kernels/nax-gemm/) for the M5 tensor path.
+3. 12 min. Ask Claude for the throughput microbench. Read the number against the prediction.
+4. 3 min. "After".
+
+**Wed · The single-chunk kernel**
+1. 5 min. `sessions/w07-wed.md`. Predict the time for one C=64 chunk from the matmul FLOPs and the roof.
+2. 10 min. [Kimi Linear paper, Appendix C](https://arxiv.org/html/2510.26692v1): Listings 8(a) `chunk_dplr` and 8(b) `chunk_kda`, two 30-line PyTorch functions diffed. 8(b) builds only two C by C matrices, `Aqk` and `Akk`, and is the structure to copy for the vector gate. Your own [steel-blockmma](https://metalworking.vercel.app/kernels/steel-blockmma/) for how steel tiles a block.
+3. 12 min. Ask Claude for the single-chunk kernel: intra-chunk log-space decays, the UT solve, outputs, chunk-end state, tiled with simdgroup_matrix. Gate against the fp64 reference.
+4. 3 min. "After".
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w07/thu_sgmm.metal`: one 8 by 8 simdgroup_matrix load, multiply-accumulate, store, from memory. Reference allowed open: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/) and [bkvogel/metal_performance_testing](https://github.com/bkvogel/metal_performance_testing) `mat_mul_optimized_nv.metal`, a CUDA-sample port, for the shape of a tiled Metal kernel. Say "done".
+
+**Fri · Judge**
+1. 10 min. `/learn review`, `/learn session`. Explain how 64 elements sit on 32 lanes.
+2. 10 min. Cards.
+3. 10 min. README row, tick week 7.
 
 ### Week 8 · cross-chunk carry
 
-**Deliverable.** The full chunkwise kernel. Gate: 2x over the sequential scan at T=4096 on the vector-gate path, or a published negative result with the mechanism.
+**By Friday you can say:** the full kernel is four stages, kkᵀ, triangular solve, recompute W and U, then the chunk scan that carries S. Gates live in log space as a cumulative sum of non-positive numbers, and every use is the exponential of a difference, never a running product, because a product of 64 gates underflows fp32. Two implementations are bit-exact only if the reduction tree is written out in source. You either reached 2x at T=4096 or you can say which stage ate the time.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · State carry between chunks, barrier cost, double-buffered chunk staging. Read the workbench's own rejection notes: v4 lost to barriers, v5 to the register cliff (`m3-m4-progress.md`). Pre-read: [double-buffering](https://metalworking.vercel.app/techniques/double-buffering/), [gemm-double-buffered](https://metalworking.vercel.app/kernels/gemm-double-buffered/). |
-| Tue | *apply* · Barrier cost vs chunk size microbench. Predict the crossover C. Pre-read: [synchronization](https://metalworking.vercel.app/metal/synchronization/). |
-| Wed | *build* · Full kernel. Run the chunkwise `harness.py all` (parity, determinism, paired bench vs the mlx-lm scan). Then diff my directed kernel against `chunk_kernel_v7.py` and write down every place v7 made a different choice and why. Pre-read: [simdgroup-async-copy](https://metalworking.vercel.app/metal/simdgroup-async-copy/), [gemm-async-ghost](https://metalworking.vercel.app/kernels/gemm-async-ghost/). |
-| Thu | *hand* · `thu_nobarrier.metal`: a reduction across a chunk with no threadgroup barrier, from memory. |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *Carry*: passing the chunk-end state to the next chunk. *Barrier*: a threadgroup-wide wait; expensive, and the reason v4 lost. *Double buffering*: loading chunk i+1 while computing chunk i. *Log-space gate*: storing log α and summing, so the cumulative product is a cumsum. *Secondary chunking*: splitting a chunk again in full precision to avoid dividing by tiny cumulative gates. *Kill gate*: the pre-agreed number below which the result is published as a negative.
+
+**Mon · The four-stage skeleton**
+1. 12 min. [FLA's chunk.py](https://raw.githubusercontent.com/fla-org/flash-linear-attention/main/fla/ops/gated_delta_rule/chunk.py), `chunk_gated_delta_rule_fwd` at line 33 only, and the comment at lines 70 to 71: `kkt + solve_tril + recompute_w_u`. That split is the kernel skeleton; the Triton is Agent-B territory you can skim.
+2. 8 min. [FLA's gate.py](https://raw.githubusercontent.com/fla-org/flash-linear-attention/main/fla/ops/gated_delta_rule/gate.py): `g = -A_log.exp() * softplus(g + dt_bias)`, so g is log α and never positive; the kernel does an fp32 cumsum, never a product. Your own [double-buffering](https://metalworking.vercel.app/techniques/double-buffering/) and [gemm-double-buffered](https://metalworking.vercel.app/kernels/gemm-double-buffered/) for the staging pattern.
+3. 5 min. Read the workbench's own rejection notes in `~/myproj/apple_job_track/work/m3-m4-progress.md`: v4 lost to barriers, v5 to the register cliff.
+4. 5 min. `/learn read`, cards.
+
+**Tue · Barrier cost vs chunk size**
+1. 5 min. `sessions/w08-tue.md`. Predict the crossover chunk size where one barrier per chunk stops mattering.
+2. 8 min. [Kimi Linear §3.2 and §6.2](https://arxiv.org/html/2510.26692v1): the `K/Γ` term divides by a cumulative product, GLA's fix was log-space plus secondary chunking in full precision at a speed cost, and KDA's a=b=k removes two of those steps. Your own [synchronization](https://metalworking.vercel.app/metal/synchronization/).
+3. 14 min. Ask Claude for the barrier microbench at C = 16, 32, 64, 128.
+4. 3 min. "After".
+
+**Wed · The full kernel and the gate**
+1. 5 min. `sessions/w08-wed.md`. Predict the speedup over the scan at T=4096 and T=8192, and which stage dominates.
+2. 10 min. The header and kernel docstrings of [mlx-lm's gated_delta.py](https://raw.githubusercontent.com/ml-explore/mlx-lm/main/mlx_lm/models/gated_delta.py), lines 10 to 15, 152 to 163, 247 to 267: bit-exact by construction means the shuffle_xor butterfly is written out in source, with a kill-switch and a slow comparator kernel kept as the oracle. Your own [simdgroup-async-copy](https://metalworking.vercel.app/metal/simdgroup-async-copy/) and [gemm-async-ghost](https://metalworking.vercel.app/kernels/gemm-async-ghost/).
+3. 12 min. Ask Claude for the full kernel. Run the chunkwise `harness.py all` (parity, determinism, paired bench against the mlx-lm scan). Then diff against `chunk_kernel_v7.py` and write down every place v7 chose differently and why.
+4. 3 min. "After". If the number is below 2x at T=4096, the Friday row says so and names the stage.
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w08/thu_nobarrier.metal`: a reduction across a chunk using only simd shuffles, no threadgroup barrier, from memory. Say "done".
+
+**Fri · Judge**
+1. 10 min. `/learn review`, `/learn session`. Explain why the gates are summed and not multiplied.
+2. 10 min. Cards.
+3. 10 min. README rows for T=4096 and T=8192, tick week 8.
 
 ### Week 9 · NVIDIA
 
-**Deliverable.** FLA's chunkwise kernel profiled on an H100, and a simplified Triton chunkwise kernel I directed, with the Hopper PTX vocabulary read.
+**By Friday you can say:** on Hopper the fast path is TMA copying whole tiles from global to shared memory asynchronously, mbarriers to know when a tile has landed, and wgmma issuing a 64 by N by 16 matmul from a whole warpgroup with operands in shared memory. FLA's Triton kernel uses the same four stages as week 8, and Nsight shows which pipe is the bound. Your simplified Triton port loses to FLA and you can say by how much and where.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · FLA's `chunk_gated_delta_rule` Triton kernel structure. PTX ISA sections: `cp.async.bulk.tensor` (TMA), `mbarrier`, `wgmma`. For what people build with them: [ThunderKittens](https://github.com/HazyResearch/ThunderKittens), [DeepGEMM](https://github.com/deepseek-ai/DeepGEMM). |
-| Tue | *apply* · Run FLA's kernel on the H100 at the week 6 shapes. Nsight Compute it: which pipe is the bound. |
-| Wed | *build* · Direct a simplified Triton chunkwise kernel (scalar gate, one chunk size). Baseline: FLA. It will lose; the point is explaining by how much and why. |
-| Thu | *hand* · `thu_mbarrier.cu`: a CUDA kernel with one inline PTX `mbarrier` init-arrive-wait or one `wgmma` fence, from memory. |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *TMA (Tensor Memory Accelerator)*: Hopper's hardware tile copier, `cp.async.bulk.tensor` in PTX. *mbarrier*: a shared-memory barrier that async copies signal when complete. *wgmma*: warpgroup matrix multiply-accumulate, four warps issuing one asynchronous MMA. *Warpgroup*: four consecutive warps, 128 threads. *CTA*: a thread block, in PTX vocabulary.
+
+**Mon · TMA, read with a worked kernel**
+1. 20 min. [Colfax Research, "A Hopper TMA Deep Dive"](https://research.colfax-intl.com/tutorial-hopper-tma/), the load, store, and multicast kernels. The runnable repo is linked from the post.
+2. 5 min. PTX ISA syntax block for [cp.async.bulk.tensor](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#data-movement-and-conversion-instructions-cp-async-bulk-tensor).
+3. 5 min. `/learn read`, cards.
+
+**Tue · wgmma, then profile FLA**
+1. 5 min. `sessions/w09-tue.md`. Predict which Nsight pipe FLA's chunk kernel saturates at the week 6 shapes.
+2. 12 min. [Colfax, "Delving into the Hopper Hierarchy" (wgmma)](https://research.colfax-intl.com/cutlass-tutorial-wgmma-hopper/): the explicit `wgmma.mma_async.sync.aligned.m64n64k16` and its register constraints. PTX ISA syntax blocks for [ldmatrix](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#warp-level-matrix-instructions-ldmatrix) and [wgmma](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#asynchronous-warpgroup-level-matrix-operation-wgmma-mma-async).
+3. 10 min. Ask Claude to run FLA's `chunk_gated_delta_rule` on the H100 at the week 6 shapes under `ncu`, if counters are permitted, else timed. Read the stall reasons.
+4. 3 min. "After".
+
+**Wed · Direct a Triton chunkwise kernel**
+1. 5 min. `sessions/w09-wed.md`. Predict the ratio to FLA for a scalar-gate, single-chunk-size Triton kernel.
+2. 8 min. [FlashQLA README](https://github.com/QwenLM/FlashQLA): the shared `chunk_gated_delta_rule(q, k, v, g, beta, scale, initial_state, output_final_state, cu_seqlens)` contract and the claim of "2-3× forward speedup" over FLA on Hopper through warpgroup specialization in TileLang. Not a teaching repo; read it for what "good" costs. Skim [Shankhdhar's cuBLAS worklog](https://cudaforfun.substack.com/p/outperforming-cublas-on-h100-a-worklog) for the TMA and wgmma steps told as a story.
+3. 14 min. Ask Claude for the simplified Triton kernel. Baseline: FLA. It will lose; the point is explaining by how much and why.
+4. 3 min. "After".
+
+**Thu · Hand-write, no AI**
+1. 30 min. `kernels/w09/thu_mbarrier.cu`: a CUDA kernel with one inline PTX mbarrier init, arrive, and wait, or one wgmma fence, from memory. Reference allowed open: the [Inline PTX Assembly](https://docs.nvidia.com/cuda/inline-ptx-assembly/index.html) doc. Say "done"; Claude compiles on Modal.
+
+**Fri · Judge**
+1. 10 min. `/learn review`, `/learn session`. Explain TMA plus mbarrier without the diagram.
+2. 10 min. Cards.
+3. 10 min. README row, tick week 9.
 
 ### Week 10 · compare and ship
 
-**Deliverable.** The arc 2 comparison table, the writeup, and the kernel shipped.
+**By Friday you can say:** Blackwell datacenter parts replace wgmma with tcgen05.mma, launched by one thread, accumulating into a dedicated Tensor Memory of 512 columns by 128 lanes per CTA; the consumer Blackwell parts have none of this. On Apple the only way below the compiler is a reverse-engineered disassembler that targets the M1 and may not decode M5 output. Arc 2 is written up and shipped.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · One session, labeled as reverse-engineered, with [dougallj/applegpu](https://github.com/dougallj/applegpu): disassemble the week 8 kernel and find the instruction the register cliff comes from. Not a tool to lead with in an Apple conversation. Pre-read: [disassembly](https://metalworking.vercel.app/metal/disassembly/). |
-| Tue | *apply* · Fill the arc 2 table. Optional: one B200 session on Modal to see `tcgen05` and tensor memory in the PTX FLA emits. |
-| Wed | *build* · Arc 2 writeup: chunkwise vs scan on M5, FLA vs directed Triton on H100, what each platform's profiler said. Pre-read: [three-questions](https://metalworking.vercel.app/war-stories/three-questions/). |
-| Thu | *none* · Friday covers the arc. |
-| Fri | *ship* · If the kernel is small enough to review, a pull request to mlx-lm. Otherwise it lands in [kda-metal](https://github.com/Exorust/kda-metal) with an issue in mlx-lm linking it and crediting FLA, FlashQLA, and the closed prior PRs #1241 and #1389. Then the arc blurt. |
+**Words used this week.** *tcgen05*: the Blackwell SM100 tensor-core instruction family. *Tensor Memory (TMEM)*: on-chip accumulator memory separate from registers and shared memory. *SM100 vs SM12x*: datacenter Blackwell (B200) vs consumer Blackwell (RTX Pro); only SM100 has TMEM. *applegpu*: dougallj's reverse-engineered Apple GPU disassembler.
+
+**Mon · One look below the Apple compiler**
+1. 20 min. [dougallj/applegpu](https://github.com/dougallj/applegpu) README and `disassemble.py`. Try it on the week 8 kernel's binary from the Xcode capture. It targets the G13 (M1); if it fails to decode M5 code, that is the finding. Your own [disassembly](https://metalworking.vercel.app/metal/disassembly/) first. Labeled as reverse-engineered; not a tool to lead with in an Apple conversation.
+2. 10 min. `/learn read`, cards.
+
+**Tue · The arc 2 table, and one Blackwell look**
+1. 15 min. Fill the arc 2 table below from the week 8 and week 9 numbers.
+2. 15 min. [Colfax, "Writing GEMM Kernels Using Tensor Memory for Blackwell"](https://research.colfax-intl.com/cutlass-tutorial-writing-gemm-kernels-using-tensor-memory-for-nvidia-blackwell-gpus/), Part 1 sections "An Overview of Blackwell MMA" and "Tensor Memory" only, then the one paragraph of [PTX ISA §9.7.18.1](https://docs.nvidia.com/cuda/parallel-thread-execution/index.html#tensor-memory) with the 512 by 128 by 32-bit geometry. Optional: one B200 session on Modal to see `tcgen05` in the PTX FLA emits.
+
+**Wed · Arc 2 writeup**
+1. 5 min. Your own [three-questions](https://metalworking.vercel.app/war-stories/three-questions/), once more, before writing.
+2. 25 min. `writeups/arc2.md`: chunkwise vs scan on the M5, FLA vs directed Triton on the H100, what each profiler showed, credits to FLA, FlashQLA, and the closed prior pull requests #1241 and #1389.
+
+**Thu · none.** Friday covers the arc.
+
+**Fri · Ship**
+1. 20 min. If the kernel is small enough to review, a pull request to mlx-lm. Otherwise it lands in [kda-metal](https://github.com/Exorust/kda-metal) with an issue in mlx-lm linking it. Written by you, no AI footer, benchmark table included.
+2. 10 min. Arc blurt across weeks 6 to 10, cards, tick week 10.
 
 ---
 
@@ -256,6 +417,8 @@ Filled in on Fridays. Machine, MLX version, and date on every row. Empty until m
 Arc 3 is attention decode, grouped-query, bf16, both platforms, against MLX's fused attention and FlashAttention. Same rhythm. Not planned in detail until arc 2 ships.
 
 ## Related
+
+- [research/SYNTHESIS.md](research/SYNTHESIS.md): where every external link in this plan came from, with verbatim quotes, the contradictions to watch for, and what was searched and not found. Raw agent reports in `research/0*.md`.
 
 - [metalworking](https://metalworking.vercel.app/): the Apple GPU glossary this plan assumes. Each week lists its pre-read pages; the [machine](https://metalworking.vercel.app/machine/gpu-core/) and [mlx](https://metalworking.vercel.app/mlx/mlx-overview/) sections are the week 0 read if any of it is new
 - [kda-metal](https://github.com/Exorust/kda-metal): the hand-written Kimi Delta Attention step kernel, 2x on M5, the portfolio piece
