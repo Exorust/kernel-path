@@ -66,27 +66,23 @@ Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights m
 
 **Deliverable.** A bf16 GEMV in `mx.fast.metal_kernel` with a stated percent of this machine's copy bandwidth, and my first Thursday file.
 
-**Pre-read from metalworking.** [gpu-core](https://metalworking.vercel.app/machine/gpu-core/), [simdgroup](https://metalworking.vercel.app/machine/simdgroup/), [threadgroup-memory](https://metalworking.vercel.app/machine/threadgroup-memory/), [unified-memory](https://metalworking.vercel.app/machine/unified-memory/), [mx.fast](https://metalworking.vercel.app/mlx/mx-fast/), [dispatch-geometry](https://metalworking.vercel.app/metal/dispatch-geometry/). Profiling reality check: [profiling](https://metalworking.vercel.app/metal/profiling/).
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · Apple GPU execution model: threadgroups, simdgroups of 32, threadgroup memory, unified memory. Source: [MLX custom Metal kernels](https://ml-explore.github.io/mlx/build/html/dev/custom_metal_kernels.html) end to end, then the threads-and-threadgroups page of the [Metal docs](https://developer.apple.com/documentation/metal/compute_passes/creating_threads_and_threadgroups). Microarchitecture numbers: [philipturner/metal-benchmarks](https://github.com/philipturner/metal-benchmarks). |
-| Tue | *apply* · Copy kernel. Sweep threadgroup width 32 to 1024 and elements per thread 1 to 8. Predict which combination reaches peak and why. Run `bench.probe()` first. |
-| Wed | *build* · bf16 GEMV, W[N,K] · x[K], in `metal_kernel`. Baseline: `mx.matmul`. Report percent of copy bandwidth. Profile: `mx.metal.start_capture` then Xcode's shader profiler ([capturing a Metal workload](https://developer.apple.com/documentation/xcode/capturing-a-metal-workload-in-xcode)). |
-| Thu | *hand* · `thu_vadd.metal`, then `thu_reduce.metal` using `simd_sum`. From memory. |
+| Mon | *understand* · Apple GPU execution model: threadgroups, simdgroups of 32, threadgroup memory, unified memory. Source: [MLX custom Metal kernels](https://ml-explore.github.io/mlx/build/html/dev/custom_metal_kernels.html) end to end, then the threads-and-threadgroups page of the [Metal docs](https://developer.apple.com/documentation/metal/compute_passes/creating_threads_and_threadgroups). Microarchitecture numbers: [philipturner/metal-benchmarks](https://github.com/philipturner/metal-benchmarks). Pre-read: [gpu-core](https://metalworking.vercel.app/machine/gpu-core/), [simdgroup](https://metalworking.vercel.app/machine/simdgroup/), [threadgroup-memory](https://metalworking.vercel.app/machine/threadgroup-memory/), [unified-memory](https://metalworking.vercel.app/machine/unified-memory/). |
+| Tue | *apply* · Copy kernel. Sweep threadgroup width 32 to 1024 and elements per thread 1 to 8. Predict which combination reaches peak and why. Run `bench.probe()` first. Pre-read: [dispatch-geometry](https://metalworking.vercel.app/metal/dispatch-geometry/). |
+| Wed | *build* · bf16 GEMV, W[N,K] · x[K], in `metal_kernel`. Baseline: `mx.matmul`. Report percent of copy bandwidth. Profile: `mx.metal.start_capture` then Xcode's shader profiler ([capturing a Metal workload](https://developer.apple.com/documentation/xcode/capturing-a-metal-workload-in-xcode)). Pre-read: [mx-fast](https://metalworking.vercel.app/mlx/mx-fast/), [profiling](https://metalworking.vercel.app/metal/profiling/). |
+| Thu | *hand* · `thu_vadd.metal`, then `thu_reduce.metal` using `simd_sum`. From memory. Pre-read: [msl](https://metalworking.vercel.app/metal/msl/). |
 | Fri | *judge* · Blurt, cards, README row. |
 
 ### Week 2 · int4 and fused dequant
 
 **Deliverable.** A fused int4 GEMV that matches `mx.quantized_matmul` numerically and within 10 percent of its speed at M=1.
 
-**Pre-read from metalworking.** [quantization](https://metalworking.vercel.app/mlx/quantization/), [decode-vs-prefill](https://metalworking.vercel.app/techniques/decode-vs-prefill/), [fusion-and-epilogues](https://metalworking.vercel.app/techniques/fusion-and-epilogues/).
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · MLX affine quantization: `bits`, `group_size`, per-group scale and bias, and the packed layout. Source: [mx.quantize](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.quantize.html) and [mx.quantized_matmul](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.quantized_matmul.html) docs, then the packing code in `mlx/backend/metal/kernels/quantized.h` (read only). |
-| Tue | *apply* · Dequant-only kernel: int4 to bf16 for one row. Predict bytes in, bytes out, and time from the week 1 bandwidth. |
-| Wed | *build* · Fused dequant GEMV, group_size 64, 4 bits. Baseline: `mx.quantized_matmul`. Parity: max abs error against `mx.dequantize` then `mx.matmul`. |
+| Mon | *understand* · MLX affine quantization: `bits`, `group_size`, per-group scale and bias, and the packed layout. Source: [mx.quantize](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.quantize.html) and [mx.quantized_matmul](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.quantized_matmul.html) docs, then the packing code in `mlx/backend/metal/kernels/quantized.h` (read only). Pre-read: [quantization](https://metalworking.vercel.app/mlx/quantization/). |
+| Tue | *apply* · Dequant-only kernel: int4 to bf16 for one row. Predict bytes in, bytes out, and time from the week 1 bandwidth. Pre-read: [decode-vs-prefill](https://metalworking.vercel.app/techniques/decode-vs-prefill/). |
+| Wed | *build* · Fused dequant GEMV, group_size 64, 4 bits. Baseline: `mx.quantized_matmul`. Parity: max abs error against `mx.dequantize` then `mx.matmul`. Pre-read: [fusion-and-epilogues](https://metalworking.vercel.app/techniques/fusion-and-epilogues/). |
 | Thu | *hand* · `thu_dequant.metal`: unpack and dequantize one group of 64 by hand. |
 | Fri | *judge* · Blurt, cards, README row. |
 
@@ -94,14 +90,12 @@ Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights m
 
 **Deliverable.** A batched quantized matvec at M=1, 4, 8 that matches or beats MLX at each, with an explanation of where the stock kernel stalls.
 
-**Pre-read from metalworking.** [occupancy](https://metalworking.vercel.app/machine/occupancy/), [registers](https://metalworking.vercel.app/machine/registers/), [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/), [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/), and the war story [cheap-tricks](https://metalworking.vercel.app/war-stories/cheap-tricks/).
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · Read MLX's quantized matvec kernels in `quantized.h` (the `qmv` family) for how they split K and assign rows to simdgroups. Registers per thread vs occupancy on Apple GPUs: the register file section of metal-benchmarks. |
+| Mon | *understand* · Read MLX's quantized matvec kernels in `quantized.h` (the `qmv` family) for how they split K and assign rows to simdgroups. Registers per thread vs occupancy on Apple GPUs: the register file section of metal-benchmarks. Pre-read: [occupancy](https://metalworking.vercel.app/machine/occupancy/), [registers](https://metalworking.vercel.app/machine/registers/). |
 | Tue | *apply* · Occupancy microbench: same kernel with 32, 64, 128 live floats per thread. Predict the cliff. |
-| Wed | *build* · Batched qmv. Baseline: `mx.quantized_matmul` at M=1, 4, 8. The M=3 to 6 stall reported by MTPLX is the target; a 10-line fix gave them 2.24x. |
-| Thu | *hand* · `thu_tiled_load.metal`: coalesced tiled load of a [64,64] bf16 tile into threadgroup memory. |
+| Wed | *build* · Batched qmv. Baseline: `mx.quantized_matmul` at M=1, 4, 8. The M=3 to 6 stall reported by MTPLX is the target; a 10-line fix gave them 2.24x. Pre-read: [cheap-tricks](https://metalworking.vercel.app/war-stories/cheap-tricks/). |
+| Thu | *hand* · `thu_tiled_load.metal`: coalesced tiled load of a [64,64] bf16 tile into threadgroup memory. Pre-read: [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/), [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/). |
 | Fri | *judge* · Blurt, cards, README row. |
 
 ### Week 4 · NVIDIA port
@@ -120,13 +114,11 @@ Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights m
 
 **Deliverable.** The arc 1 comparison table, the writeup, and the entry ticket to mlx-lm.
 
-**Pre-read from metalworking.** [profiling](https://metalworking.vercel.app/metal/profiling/) again, now with Nsight on the other side, and [the-failures](https://metalworking.vercel.app/war-stories/the-failures/) before writing the arc 1 writeup.
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · Same kernel, two profilers. What Nsight Compute shows that Xcode's shader profiler does not, and the reverse. |
+| Mon | *understand* · Same kernel, two profilers. What Nsight Compute shows that Xcode's shader profiler does not, and the reverse. Pre-read: [profiling](https://metalworking.vercel.app/metal/profiling/). |
 | Tue | *apply* · Fill the comparison table below: both platforms, percent of roofline, M=1, 4, 8. |
-| Wed | *build* · Arc 1 writeup: what was tried, what failed, the table, the honest ceiling. |
+| Wed | *build* · Arc 1 writeup: what was tried, what failed, the table, the honest ceiling. Pre-read: [the-failures](https://metalworking.vercel.app/war-stories/the-failures/). |
 | Thu | *hand* · `thu_gemv.cu`: bf16 GEMV in CUDA from memory, timed. |
 | Fri | *ship* · One small pull request or benchmark-backed issue to [mlx-lm](https://github.com/ml-explore/mlx-lm), written by me, no AI footer. This opens the contributor gate for week 10. Then the arc blurt. |
 
@@ -140,12 +132,10 @@ mlx-lm runs every linear-attention model through one file, [gated_delta.py](http
 
 **Deliverable.** An fp64 chunked reference and a frozen tolerance contract, plus the sequential scan written by hand as the baseline.
 
-**Pre-read from metalworking.** [arithmetic-intensity](https://metalworking.vercel.app/techniques/arithmetic-intensity/), [tiling](https://metalworking.vercel.app/techniques/tiling/), [lazy-evaluation](https://metalworking.vercel.app/mlx/lazy-evaluation/) (why `bench.py` evals every iteration).
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · Gated delta rule recurrence. Chunkwise algebra: cumulative decays in log space, the unit-lower-triangular solve (UT transform), chunk-end state carry. Why the scan loses past T=1024. Sources: the paper above, FLA's `chunk.py` in `fla/ops/gated_delta_rule/`, and [FlashQLA](https://github.com/QwenLM/FlashQLA) as prior art. |
-| Tue | *apply* · Time mlx-lm's scan at T=512, 1024, 4096, 8192 for the vector-gate shape (B=1, Hk=16, Hv=32, Dk=Dv=128). Predict the scaling exponent. |
+| Mon | *understand* · Gated delta rule recurrence. Chunkwise algebra: cumulative decays in log space, the unit-lower-triangular solve (UT transform), chunk-end state carry. Why the scan loses past T=1024. Sources: the paper above, FLA's `chunk.py` in `fla/ops/gated_delta_rule/`, and [FlashQLA](https://github.com/QwenLM/FlashQLA) as prior art. Pre-read: [arithmetic-intensity](https://metalworking.vercel.app/techniques/arithmetic-intensity/), [tiling](https://metalworking.vercel.app/techniques/tiling/). |
+| Tue | *apply* · Time mlx-lm's scan at T=512, 1024, 4096, 8192 for the vector-gate shape (B=1, Hk=16, Hv=32, Dk=Dv=128). Predict the scaling exponent. Pre-read: [lazy-evaluation](https://metalworking.vercel.app/mlx/lazy-evaluation/). |
 | Wed | *build* · fp64 chunked reference in numpy, NMSE tolerance per dtype frozen before any Metal code. Contract: fp32 accumulation, fast math off, no atomics, log-space decays. |
 | Thu | *hand* · `thu_scan.metal`: the sequential gated-delta scan, one simdgroup per (head, value row), from memory. This is the baseline everything is measured against. |
 | Fri | *judge* · Blurt, cards, README row. |
@@ -154,27 +144,23 @@ mlx-lm runs every linear-attention model through one file, [gated_delta.py](http
 
 **Deliverable.** A single-chunk kernel (C=64) that matches the fp64 reference within tolerance.
 
-**Pre-read from metalworking.** [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/), [register-blocking](https://metalworking.vercel.app/techniques/register-blocking/), [steel-blockmma](https://metalworking.vercel.app/kernels/steel-blockmma/), [nax-gemm](https://metalworking.vercel.app/kernels/nax-gemm/) for the M5-era tensor path.
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · `simdgroup_matrix<T,8,8>`: load, multiply, store, and the layout it wants. The register cliff: what happens to occupancy when a simdgroup holds too many 8x8 tiles. Source: the simdgroup matrix section of the [Metal Shading Language spec](https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf), and [metal-flash-attention](https://github.com/philipturner/metal-flash-attention) for a production use. |
-| Tue | *apply* · 8x8 simdgroup_matrix throughput microbench. Predict TFLOPs vs the machine's published peak. |
-| Wed | *build* · Single-chunk kernel: intra-chunk decays, UT solve, outputs, chunk-end state. Gate against the fp64 reference. |
-| Thu | *hand* · `thu_sgmm.metal`: one 8x8 simdgroup_matrix multiply-accumulate, from memory. |
+| Mon | *understand* · `simdgroup_matrix<T,8,8>`: load, multiply, store, and the layout it wants. The register cliff: what happens to occupancy when a simdgroup holds too many 8x8 tiles. Source: the simdgroup matrix section of the [Metal Shading Language spec](https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf), and [metal-flash-attention](https://github.com/philipturner/metal-flash-attention) for a production use. Pre-read: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/), [register-blocking](https://metalworking.vercel.app/techniques/register-blocking/). |
+| Tue | *apply* · 8x8 simdgroup_matrix throughput microbench. Predict TFLOPs vs the machine's published peak. Pre-read: [nax-gemm](https://metalworking.vercel.app/kernels/nax-gemm/). |
+| Wed | *build* · Single-chunk kernel: intra-chunk decays, UT solve, outputs, chunk-end state. Gate against the fp64 reference. Pre-read: [steel-blockmma](https://metalworking.vercel.app/kernels/steel-blockmma/). |
+| Thu | *hand* · `thu_sgmm.metal`: one 8x8 simdgroup_matrix multiply-accumulate, from memory. Pre-read: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/). |
 | Fri | *judge* · Blurt, cards, README row. |
 
 ### Week 8 · cross-chunk carry
 
 **Deliverable.** The full chunkwise kernel. Gate: 2x over the sequential scan at T=4096 on the vector-gate path, or a published negative result with the mechanism.
 
-**Pre-read from metalworking.** [synchronization](https://metalworking.vercel.app/metal/synchronization/), [double-buffering](https://metalworking.vercel.app/techniques/double-buffering/), [simdgroup-async-copy](https://metalworking.vercel.app/metal/simdgroup-async-copy/), [gemm-double-buffered](https://metalworking.vercel.app/kernels/gemm-double-buffered/), [gemm-async-ghost](https://metalworking.vercel.app/kernels/gemm-async-ghost/).
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · State carry between chunks, barrier cost, double-buffered chunk staging. Read the workbench's own rejection notes: v4 lost to barriers, v5 to the register cliff (`m3-m4-progress.md`). |
-| Tue | *apply* · Barrier cost vs chunk size microbench. Predict the crossover C. |
-| Wed | *build* · Full kernel. Run the chunkwise `harness.py all` (parity, determinism, paired bench vs the mlx-lm scan). Then diff my directed kernel against `chunk_kernel_v7.py` and write down every place v7 made a different choice and why. |
+| Mon | *understand* · State carry between chunks, barrier cost, double-buffered chunk staging. Read the workbench's own rejection notes: v4 lost to barriers, v5 to the register cliff (`m3-m4-progress.md`). Pre-read: [double-buffering](https://metalworking.vercel.app/techniques/double-buffering/), [gemm-double-buffered](https://metalworking.vercel.app/kernels/gemm-double-buffered/). |
+| Tue | *apply* · Barrier cost vs chunk size microbench. Predict the crossover C. Pre-read: [synchronization](https://metalworking.vercel.app/metal/synchronization/). |
+| Wed | *build* · Full kernel. Run the chunkwise `harness.py all` (parity, determinism, paired bench vs the mlx-lm scan). Then diff my directed kernel against `chunk_kernel_v7.py` and write down every place v7 made a different choice and why. Pre-read: [simdgroup-async-copy](https://metalworking.vercel.app/metal/simdgroup-async-copy/), [gemm-async-ghost](https://metalworking.vercel.app/kernels/gemm-async-ghost/). |
 | Thu | *hand* · `thu_nobarrier.metal`: a reduction across a chunk with no threadgroup barrier, from memory. |
 | Fri | *judge* · Blurt, cards, README row. |
 
@@ -194,13 +180,11 @@ mlx-lm runs every linear-attention model through one file, [gated_delta.py](http
 
 **Deliverable.** The arc 2 comparison table, the writeup, and the kernel shipped.
 
-**Pre-read from metalworking.** [disassembly](https://metalworking.vercel.app/metal/disassembly/) before the applegpu session, [three-questions](https://metalworking.vercel.app/war-stories/three-questions/) before the writeup.
-
 | Day | Session |
 |---|---|
-| Mon | *understand* · One session, labeled as reverse-engineered, with [dougallj/applegpu](https://github.com/dougallj/applegpu): disassemble the week 8 kernel and find the instruction the register cliff comes from. Not a tool to lead with in an Apple conversation. |
+| Mon | *understand* · One session, labeled as reverse-engineered, with [dougallj/applegpu](https://github.com/dougallj/applegpu): disassemble the week 8 kernel and find the instruction the register cliff comes from. Not a tool to lead with in an Apple conversation. Pre-read: [disassembly](https://metalworking.vercel.app/metal/disassembly/). |
 | Tue | *apply* · Fill the arc 2 table. Optional: one B200 session on Modal to see `tcgen05` and tensor memory in the PTX FLA emits. |
-| Wed | *build* · Arc 2 writeup: chunkwise vs scan on M5, FLA vs directed Triton on H100, what each platform's profiler said. |
+| Wed | *build* · Arc 2 writeup: chunkwise vs scan on M5, FLA vs directed Triton on H100, what each platform's profiler said. Pre-read: [three-questions](https://metalworking.vercel.app/war-stories/three-questions/). |
 | Thu | *none* · Friday covers the arc. |
 | Fri | *ship* · If the kernel is small enough to review, a pull request to mlx-lm. Otherwise it lands in [kda-metal](https://github.com/Exorust/kda-metal) with an issue in mlx-lm linking it and crediting FLA, FlashQLA, and the closed prior PRs #1241 and #1389. Then the arc blurt. |
 
