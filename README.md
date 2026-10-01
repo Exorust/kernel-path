@@ -64,15 +64,37 @@ Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights m
 
 ### Week 1 · the machine and bf16 GEMV
 
-**Deliverable.** A bf16 GEMV in `mx.fast.metal_kernel` with a stated percent of this machine's copy bandwidth, and my first Thursday file.
+**By Friday you can say:** a Metal kernel is a grid of threads, grouped 32 at a time into simdgroups that run in lockstep, grouped again into threadgroups that share a small fast memory. A matrix-vector product (GEMV) on this machine is limited by how fast memory can be read, about 93 GB/s on an M5, and the only score that matters is what percent of that your kernel reaches.
 
-| Day | Session |
-|---|---|
-| Mon | *understand* · Apple GPU execution model: threadgroups, simdgroups of 32, threadgroup memory, unified memory. Source: [MLX custom Metal kernels](https://ml-explore.github.io/mlx/build/html/dev/custom_metal_kernels.html) end to end, then the threads-and-threadgroups page of the [Metal docs](https://developer.apple.com/documentation/metal/compute_passes/creating_threads_and_threadgroups). Microarchitecture numbers: [philipturner/metal-benchmarks](https://github.com/philipturner/metal-benchmarks). Pre-read: [gpu-core](https://metalworking.vercel.app/machine/gpu-core/), [simdgroup](https://metalworking.vercel.app/machine/simdgroup/), [threadgroup-memory](https://metalworking.vercel.app/machine/threadgroup-memory/), [unified-memory](https://metalworking.vercel.app/machine/unified-memory/). |
-| Tue | *apply* · Copy kernel. Sweep threadgroup width 32 to 1024 and elements per thread 1 to 8. Predict which combination reaches peak and why. Run `bench.probe()` first. Pre-read: [dispatch-geometry](https://metalworking.vercel.app/metal/dispatch-geometry/). |
-| Wed | *build* · bf16 GEMV, W[N,K] · x[K], in `metal_kernel`. Baseline: `mx.matmul`. Report percent of copy bandwidth. Profile: `mx.metal.start_capture` then Xcode's shader profiler ([capturing a Metal workload](https://developer.apple.com/documentation/xcode/capturing-a-metal-workload-in-xcode)). Pre-read: [mx-fast](https://metalworking.vercel.app/mlx/mx-fast/), [profiling](https://metalworking.vercel.app/metal/profiling/). |
-| Thu | *hand* · `thu_vadd.metal`, then `thu_reduce.metal` using `simd_sum`. From memory. Pre-read: [msl](https://metalworking.vercel.app/metal/msl/). |
-| Fri | *judge* · Blurt, cards, README row. |
+**Words used this week.** *Thread*: one copy of your kernel running on one element. *Simdgroup*: 32 threads that execute the same instruction at the same time; they can pass values to each other without touching memory. *Threadgroup*: a bundle of simdgroups that can share a small on-chip memory. *Grid*: all the threads of one kernel launch. *Unified memory*: the CPU and GPU use the same RAM, so there is no copy step, but the bandwidth limit still applies. *GEMV*: matrix times vector, the shape of every decode step.
+
+**Mon · How does an Apple GPU run my code?**
+1. 10 min. Read [gpu-core](https://metalworking.vercel.app/machine/gpu-core/) and [simdgroup](https://metalworking.vercel.app/machine/simdgroup/) on metalworking. Goal: be able to draw thread, simdgroup, threadgroup, grid as four nested boxes.
+2. 12 min. Read the first example in [MLX custom Metal kernels](https://ml-explore.github.io/mlx/build/html/dev/custom_metal_kernels.html). Find the two lines that set `grid` and `threadgroup`. Work out how many simdgroups that launch has.
+3. 8 min. `/learn read` on what you just read: blurt it back with the pages closed, write the cards.
+Skip today: [threadgroup-memory](https://metalworking.vercel.app/machine/threadgroup-memory/), [unified-memory](https://metalworking.vercel.app/machine/unified-memory/), and [metal-benchmarks](https://github.com/philipturner/metal-benchmarks). They are references for when a number surprises you later this week.
+
+**Tue · How wide should a threadgroup be?**
+1. 5 min. Write `sessions/w01-tue.md`. Prediction: which threadgroup width (32 to 1024) and elements-per-thread (1 to 8) reaches the highest GB/s on a plain copy kernel, and why.
+2. 5 min. Run `python -c "import bench; bench.probe()"` once. That number is the machine's copy roof.
+3. 15 min. Ask Claude for a copy kernel in `mx.fast.metal_kernel` with width and elements-per-thread as parameters, and a sweep over both using `bench.paired`. Read the sweep table.
+4. 5 min. Fill in "After": where was your prediction wrong, and what does [dispatch-geometry](https://metalworking.vercel.app/metal/dispatch-geometry/) say about why.
+
+**Wed · The first real kernel: bf16 GEMV**
+1. 5 min. `sessions/w01-wed.md`. Shape: W is [N, K] in bf16, x is [K]. Predict the time from bytes moved (N times K times 2) divided by Tuesday's roof.
+2. 5 min. Read [mx.fast](https://metalworking.vercel.app/mlx/mx-fast/) up to the metal_kernel section, so the Ask uses the right words.
+3. 15 min. Ask Claude for the GEMV, one simdgroup per output row, `simd_sum` for the dot product. Baseline: `mx.matmul`. Run `bench.paired` with `bytes_moved` set, and read the roofline percent.
+4. 5 min. Capture it: `mx.metal.start_capture("w01.gputrace")`, open in Xcode, find the kernel's duration. [profiling](https://metalworking.vercel.app/metal/profiling/) explains what Xcode will and will not show you.
+
+**Thu · Hand-write, no AI**
+1. 15 min. `kernels/w01/thu_vadd.metal`: add two arrays, one element per thread. From memory. Only the [msl](https://metalworking.vercel.app/metal/msl/) page is open.
+2. 15 min. `kernels/w01/thu_reduce.metal`: sum an array using `simd_sum`, one simdgroup per 32 elements. Say "done" and Claude runs both and reports whether they compile and match.
+If `thu_vadd` does not compile in 15 minutes, stop there. The compiler error goes in the Friday cards.
+
+**Fri · Judge**
+1. 10 min. `/learn review`, then `/learn session` on `kernels/w01/` with every file closed. Explain why the GEMV is one simdgroup per row and where the time goes.
+2. 10 min. Cards from the misses into `~/learning/kernel-path/cards.md`.
+3. 10 min. One row in the numbers table below: GEMV speedup vs `mx.matmul`, percent of roof, variance, machine and date. Tick week 1 in `progress.md`.
 
 ### Week 2 · int4 and fused dequant
 
