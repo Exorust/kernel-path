@@ -77,10 +77,15 @@ Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights m
 Skip today: [threadgroup-memory](https://metalworking.vercel.app/machine/threadgroup-memory/) and [unified-memory](https://metalworking.vercel.app/machine/unified-memory/). They are references for when a number surprises you later this week.
 
 **Tue · How wide should a threadgroup be?**
-1. 5 min. Write `sessions/w01-tue.md`. Prediction: which threadgroup width (32 to 1024) and elements-per-thread (1 to 8) reaches the highest GB/s on a plain copy kernel, and why.
+
+The experiment: a copy kernel reads one array and writes it to another. It does no math, so the only cost is moving bytes, and the best possible result is the copy roof from `bench.probe()`. Two knobs get swept and GB/s is measured for every combination:
+- *Threadgroup width*: threads per threadgroup, 32 (one simdgroup) up to 1024 (Monday's limit).
+- *Elements per thread*: how many array elements one thread copies, 1 to 8. At 1, each thread does one load and one store. At 4, each thread loads a `float4`, 16 bytes in one instruction.
+
+1. 5 min. Copy `sessions/TEMPLATE.md` to `sessions/w01-tue.md` and fill in "Before" only. Bound: you know it for a copy. Prediction: one pair, for example "width 256, 4 per thread, about 85 percent of roof", plus two or three sentences of why, built from Monday's ingredients: the threads-per-core rule, Apple's advice on threadgroup size, and the outstanding-loads mechanism. Being wrong with a clear reason is the good outcome.
 2. 5 min. Run `python -c "import bench; bench.probe()"` once. That number is the machine's copy roof. Compare it with the two On-Chip Memory tables in the [metal-benchmarks README](https://github.com/philipturner/metal-benchmarks), which put Apple next to Ampere and RDNA in one table. Those tables stop at M2, so expect the M5 to differ.
-3. 15 min. Ask Claude for a copy kernel in `mx.fast.metal_kernel` with width and elements-per-thread as parameters, and a sweep over both using `bench.paired`. Read the sweep table.
-4. 5 min. Fill in "After": where was your prediction wrong, and what does [dispatch-geometry](https://metalworking.vercel.app/metal/dispatch-geometry/) say about why.
+3. 15 min. Tell Claude to write the copy kernel in `mx.fast.metal_kernel` with width and elements-per-thread as parameters, and a sweep over both using `bench.paired`. Read the table it prints.
+4. 5 min. Fill in "After" in your own words: where the prediction was wrong, and what [dispatch-geometry](https://metalworking.vercel.app/metal/dispatch-geometry/) says about why.
 
 **Wed · The first real kernel: bf16 GEMV**
 1. 5 min. `sessions/w01-wed.md`. Shape: W is [N, K] in bf16, x is [K]. Predict the time from bytes moved (N times K times 2) divided by Tuesday's roof.
