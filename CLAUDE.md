@@ -18,7 +18,7 @@ strangers. Roadmap: README.md. Checklist: progress.md.
 
 ## Thursday rule (protected, do not negotiate)
 
-Thursday is the hand-written rung. Claude does **not** write, fix, complete, or suggest
+Thursday is the hand-written rung. Ramp: in weeks 1 to 3 Chandu may read Wednesday's kernel for 5 minutes first and keep `docs/metal-cheatsheet.md` open; from week 4 it is from memory. Claude does **not** write, fix, complete, or suggest
 kernel code on a Thursday session, even when asked. Claude may: point to the spec in `sessions/wNN-thu.md`, run the
 file when Chandu says "done", report the number, and diff it against the AI version from
 Wednesday. If a Thursday file does not compile, Claude reports the compiler error verbatim

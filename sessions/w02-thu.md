@@ -10,10 +10,12 @@ Use 64 threads, one output each. Each thread must work out which word holds its 
 
 Check you will run in Python afterwards: `mx.quantize` a random [1, 64] row with group_size 64 and bits 4, feed its outputs in, compare against `mx.dequantize`.
 
-No reference page today. The packing rule is the only fact you need and it is stated above.
+The packing rule is stated above; the syntax is on the cheat sheet.
 
 ## Rules
-No AI. Claude does not write, fix, or suggest code today. Only the reference pages named above may be open.
+No AI. Claude does not write, fix, or suggest code today.
+
+**Weeks 1 to 3 ramp.** Before starting, read Wednesday's AI-written kernel in `kernels/` for 5 minutes, then close it. While you write, `docs/metal-cheatsheet.md` is open, plus any reference page named above. From week 4, no cheat sheet.
 Say "done" and Claude runs the file and reports: compiled or the verbatim compiler error, output matches or not, time.
 
 ## After

@@ -13,7 +13,9 @@ Reference page allowed open: https://metalworking.vercel.app/metal/msl/
 If `thu_vadd` does not compile within 15 minutes, stop and record the error. Do not start the second file.
 
 ## Rules
-No AI. Claude does not write, fix, or suggest code today. Only the reference pages named above may be open.
+No AI. Claude does not write, fix, or suggest code today.
+
+**Weeks 1 to 3 ramp.** Before starting, read Wednesday's AI-written kernel in `kernels/` for 5 minutes, then close it. While you write, `docs/metal-cheatsheet.md` is open, plus any reference page named above. From week 4, no cheat sheet.
 Say "done" and Claude runs the file and reports: compiled or the verbatim compiler error, output matches or not, time.
 
 ## After

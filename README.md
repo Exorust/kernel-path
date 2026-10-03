@@ -42,7 +42,7 @@ Every week has the same shape. The "understand, apply, build" order is deliberat
 | Thu | **Hand-write.** The week's rung from memory, in MSL, CUDA, or PTX. No AI. Diff against Wednesday | my file, timed |
 | Fri | **Judge.** Code closed, explain the kernel back, cards from the misses, one row in the numbers table | `~/learning/kernel-path/cards.md`, README row |
 
-Thursday is protected. See `CLAUDE.md`.
+Thursday is protected. See `CLAUDE.md`. It has a ramp: in weeks 1 to 3 you read Wednesday's kernel for 5 minutes first and keep [docs/metal-cheatsheet.md](docs/metal-cheatsheet.md) open, one page with every Metal word a kernel body needs, each verified by running it. From week 4 it is from memory.
 
 Every Tuesday, Wednesday, and Thursday already has its file in `sessions/` (`w01-tue.md` through `w10-wed.md`). Each opens with **the question**: what is being asked, the given shapes and numbers, the arithmetic to do before running anything, and what the request to Claude must contain. Open the file, answer in place, then start.
 
@@ -94,7 +94,7 @@ The experiment: a copy kernel reads one array and writes it to another. It does 
 4. 5 min. Capture it. The [MLX Metal debugger doc](https://raw.githubusercontent.com/ml-explore/mlx/main/docs/src/dev/metal_debugger.rst) states the two preconditions people miss: run with `MTL_CAPTURE_ENABLED=1`, then `mx.metal.start_capture("w01.gputrace")`. Open in Xcode, find the kernel's duration in the Dependencies view. [profiling](https://metalworking.vercel.app/metal/profiling/) explains what Xcode will and will not show you. If the timing method itself feels shaky, [aurelbzo/mlx-metal-kernels](https://github.com/aurelbzo/mlx-metal-kernels) is a learning repo on the same API with a harness that reports medians and median absolute deviation.
 
 **Thu · Hand-write, no AI**
-1. 15 min. `kernels/w01/thu_vadd.metal`: add two arrays, one element per thread. From memory. Only the [msl](https://metalworking.vercel.app/metal/msl/) page is open.
+1. 15 min. `kernels/w01/thu_vadd.metal`: add two arrays, one element per thread. Cheat sheet open. Also the [msl](https://metalworking.vercel.app/metal/msl/) page is open.
 2. 15 min. `kernels/w01/thu_reduce.metal`: sum an array using `simd_sum`, one simdgroup per 32 elements. Say "done" and Claude runs both and reports whether they compile and match.
 If `thu_vadd` does not compile in 15 minutes, stop there. The compiler error goes in the Friday cards.
 
@@ -133,7 +133,7 @@ The build: the week 1 bf16 matvec, but with the weight matrix stored as int4 gro
 4. 3 min. "After", including the roofline percent.
 
 **Thu · Hand-write, no AI**
-1. 30 min. `kernels/w02/thu_dequant.metal`: unpack and dequantize one group of 64 from eight uint32 words, with scale and bias, writing 64 bf16 values. From memory. Say "done".
+1. 30 min. `kernels/w02/thu_dequant.metal`: unpack and dequantize one group of 64 from eight uint32 words, with scale and bias, writing 64 values. Cheat sheet open. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, then `/learn session` on `kernels/w02/` with files closed. Explain why the activation is pre-scaled and where the bias term goes.
@@ -169,7 +169,7 @@ The build: the week 2 int4 matvec extended so that one loaded weight word is use
 4. 5 min. "After", three rows.
 
 **Thu · Hand-write, no AI**
-1. 30 min. `kernels/w03/thu_tiled_load.metal`: coalesced load of a [64, 64] bf16 tile from device memory into threadgroup memory, each thread loading a contiguous float4. From memory. [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/) and [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/) are the reference pages allowed open. Say "done".
+1. 30 min. `kernels/w03/thu_tiled_load.metal`: coalesced load of a [64, 64] bf16 tile from device memory into threadgroup memory, each thread loading a contiguous float4. Cheat sheet open. [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/) and [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/) are the reference pages allowed open. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session` on `kernels/w03/`. Explain the stall and the fix without the code.

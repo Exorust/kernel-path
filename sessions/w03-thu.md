@@ -15,7 +15,9 @@ Check: 4096 halves = 8 KB of threadgroup memory. The limit is 32 KB.
 Reference pages allowed open: https://metalworking.vercel.app/techniques/cooperative-load/ and https://metalworking.vercel.app/kernels/steel-blockloader/
 
 ## Rules
-No AI. Claude does not write, fix, or suggest code today. Only the reference pages named above may be open.
+No AI. Claude does not write, fix, or suggest code today.
+
+**Weeks 1 to 3 ramp.** Before starting, read Wednesday's AI-written kernel in `kernels/` for 5 minutes, then close it. While you write, `docs/metal-cheatsheet.md` is open, plus any reference page named above. From week 4, no cheat sheet.
 Say "done" and Claude runs the file and reports: compiled or the verbatim compiler error, output matches or not, time.
 
 ## After
