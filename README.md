@@ -44,6 +44,8 @@ Every week has the same shape. The "understand, apply, build" order is deliberat
 
 Thursday is protected. See `CLAUDE.md`.
 
+Every Tuesday, Wednesday, and Thursday already has its file in `sessions/` (`w01-tue.md` through `w10-wed.md`). Each opens with **the question**: what is being asked, the given shapes and numbers, the arithmetic to do before running anything, and what the request to Claude must contain. Open the file, answer in place, then start.
+
 ## Setup
 
 ```bash

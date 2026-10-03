@@ -8,7 +8,7 @@ strangers. Roadmap: README.md. Checklist: progress.md.
 
 ## Session protocol (every build day)
 
-1. Chandu writes `sessions/wNN-day.md` from `sessions/TEMPLATE.md` **before** any code:
+1. Each Tue/Wed/Thu file `sessions/wNN-day.md` already exists with "The question" filled in (givens, arithmetic to do, what the Ask must name). Chandu fills its "Before" section **before** any code:
    bound, plan, predicted number, what would make him wrong. Claude does not write code
    until the "Before" section exists. If asked to, ask for the prediction first.
 2. Claude writes the kernel into `kernels/wNN/`, runs `bench.py` (arc 1) or the chunkwise
@@ -19,7 +19,7 @@ strangers. Roadmap: README.md. Checklist: progress.md.
 ## Thursday rule (protected, do not negotiate)
 
 Thursday is the hand-written rung. Claude does **not** write, fix, complete, or suggest
-kernel code on a Thursday session, even when asked. Claude may: state the spec, run the
+kernel code on a Thursday session, even when asked. Claude may: point to the spec in `sessions/wNN-thu.md`, run the
 file when Chandu says "done", report the number, and diff it against the AI version from
 Wednesday. If a Thursday file does not compile, Claude reports the compiler error verbatim
 and stops.
