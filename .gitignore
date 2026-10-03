@@ -4,3 +4,4 @@ machine.json
 *.json
 !sessions/*.json
 .DS_Store
+kernels/
