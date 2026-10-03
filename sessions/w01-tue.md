@@ -37,12 +37,24 @@ The kernel is boring on purpose: copy 256 MB, 24 launch shapes, see which is fas
 - The [three questions](https://metalworking.vercel.app/war-stories/three-questions/): can I delete work? unlock an existing fast path? cut dispatch/sync overhead?
 - Bound (memory / compute / latency / launch) and why:
 - Plan (who owns what: thread, simdgroup, threadgroup; what lives in registers vs threadgroup memory):
-- Prediction, with the arithmetic shown:
+- Prediction, with the arithmetic shown: "My understanding is that 8 elements with 1024 threadgroup will give highest value" (said 2026-10-03, recorded verbatim by Claude). Reason for 8: not given. Reason for 1024 over 32: not given. Slowest cell: not predicted. Which knob matters more: not predicted. Any cell above 93 GB/s: not predicted.
 - What would make me wrong:
 
 ## Ask (what I told Claude to write, one paragraph)
+"Let's build this now." Claude used the Ask from the question section: copy kernel in `mx.fast.metal_kernel`, 2^26 fp32, threadgroup width {32..1024} x elements per thread {1,2,4,8}, baseline `a + 0`, 6 by 4 table of GB/s.
 
 ## After
-- Measured (time, x vs baseline, CV %, roofline %):
+- Measured (time, x vs baseline, CV %, roofline %): run 2026-10-03, `kernels/w01/tue_copy_sweep.py`, MLX in `.venv`, M5 32 GB. GB/s, read + write, median of 7 trials of 5 iterations, worst cell CV 5.4%:
+
+  | width | E=1 | E=2 | E=4 | E=8 |
+  |---|---|---|---|---|
+  | 32 | 123.2 | 121.3 | 120.6 | 112.7 |
+  | 64 | 120.1 | 109.2 | 107.7 | 112.5 |
+  | 128 | 123.8 | 120.6 | 119.3 | 113.2 |
+  | 256 | 122.1 | 121.5 | 118.4 | 113.6 |
+  | 512 | 123.2 | 120.7 | 118.3 | 113.7 |
+  | 1024 | 113.2 | 117.1 | 119.3 | 110.9 |
+
+  Baseline `a + 0`: 118.2 before, 116.2 after. Correction of fact (Claude): the 93 GB/s roof in the question was a low reading from 2026-09-20; re-probed at 114 to 122 GB/s today, and `bench.probe` now keeps the best of five runs.
 - Gap between prediction and measurement, explained in my words:
 - One thing I would try next:

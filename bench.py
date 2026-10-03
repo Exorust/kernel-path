@@ -26,7 +26,7 @@ def _time(fn, iters):
 def probe(n=1 << 26):
     """Copy bandwidth (GB/s) of this machine for an fp32 array of n elements."""
     a = mx.random.normal((n,)); mx.eval(a)
-    s = _time(lambda: a + 0, 50)
+    s = min(_time(lambda: a + 0, 20) for _ in range(5))   # a roof is the best run, not the average
     gbps = 2 * n * 4 / s / 1e9                    # read + write
     json.dump({"copy_gbps": gbps, "when": time.strftime("%Y-%m-%d")}, open(MACHINE, "w"))
     print(f"copy bandwidth {gbps:.0f} GB/s -> {MACHINE}")

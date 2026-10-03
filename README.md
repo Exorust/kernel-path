@@ -66,7 +66,7 @@ Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights m
 
 ### Week 1 · the machine and bf16 GEMV
 
-**By Friday you can say:** a Metal kernel is a grid of threads, grouped 32 at a time into simdgroups that run in lockstep, grouped again into threadgroups that share a small fast memory. A matrix-vector product (GEMV) on this machine is limited by how fast memory can be read, about 93 GB/s on an M5, and the only score that matters is what percent of that your kernel reaches.
+**By Friday you can say:** a Metal kernel is a grid of threads, grouped 32 at a time into simdgroups that run in lockstep, grouped again into threadgroups that share a small fast memory. A matrix-vector product (GEMV) on this machine is limited by how fast memory can be read, about 120 GB/s on this M5, and the only score that matters is what percent of that your kernel reaches.
 
 **Words used this week.** *Thread*: one copy of your kernel running on one element. *Simdgroup*: 32 threads that execute the same instruction at the same time; they can pass values to each other without touching memory. *Threadgroup*: a bundle of simdgroups that can share a small on-chip memory. *Grid*: all the threads of one kernel launch. *Unified memory*: the CPU and GPU use the same RAM, so there is no copy step, but the bandwidth limit still applies. *GEMV*: matrix times vector, the shape of every decode step.
 

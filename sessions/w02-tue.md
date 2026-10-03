@@ -4,7 +4,7 @@
 
 You will time a kernel that only converts packed int4 weights back to bf16. How long should it take, and which side, reading or writing, dominates?
 
-**Given.** W is [4096, 4096], 4 bits, group_size 64. Packed weights: 8 nibbles per uint32, so 4096·4096/8 words = 8 MB. Scales and biases: one bf16 pair per group of 64 = 4096·64 groups · 4 bytes ≈ 1 MB. Output: 32 MB of bf16. Roof: 93 GB/s.
+**Given.** W is [4096, 4096], 4 bits, group_size 64. Packed weights: 8 nibbles per uint32, so 4096·4096/8 words = 8 MB. Scales and biases: one bf16 pair per group of 64 = 4096·64 groups · 4 bytes ≈ 1 MB. Output: 32 MB of bf16. Roof: about 120 GB/s (`machine.json`, re-probe before the session).
 
 **Work out before running.**
 1. Bytes in, bytes out, total.

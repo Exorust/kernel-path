@@ -4,7 +4,7 @@
 
 Before looking at any profile: what percent of its roof does each arc 1 kernel reach on each platform, and will Nsight Compute run at all inside Modal?
 
-**Given.** Mac roof 93 GB/s. H100 roof 3.35 TB/s. Nsight Compute reads hardware counters and fails with ERR_NVGPUCTRPERM when the container lacks permission; Modal documents nothing about it.
+**Given.** Mac roof about 120 GB/s (`machine.json`, re-probe before the session). H100 roof 3.35 TB/s. Nsight Compute reads hardware counters and fails with ERR_NVGPUCTRPERM when the container lacks permission; Modal documents nothing about it.
 
 **Write down before running.**
 1. Percent of roof for: bf16 GEMV (Mac), int4 GEMV at M=1, 4, 8 (Mac), int4 GEMV at M=1, 8 (H100). Six numbers.

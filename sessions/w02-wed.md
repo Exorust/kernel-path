@@ -4,7 +4,7 @@
 
 Fuse the dequant into the matvec so no bf16 matrix is ever written. How much faster than week 1's bf16 GEMV should it be, and how close to `mx.quantized_matmul`?
 
-**Given.** Same W as Tuesday: 8 MB packed + 1 MB of scales and biases. x is [4096] bf16. Week 1 Wednesday's measured time for the 32 MB bf16 GEMV is in `sessions/w01-wed.md`. Roof: 93 GB/s.
+**Given.** Same W as Tuesday: 8 MB packed + 1 MB of scales and biases. x is [4096] bf16. Week 1 Wednesday's measured time for the 32 MB bf16 GEMV is in `sessions/w01-wed.md`. Roof: about 120 GB/s (`machine.json`, re-probe before the session).
 
 **The trick you read in `load_vector`.** For a group, y = Σ (s·q_i + β)·x_i = s·Σ q_i·x_i + β·Σ x_i. So the bias costs one multiply per group if you keep a running sum of x, and the nibbles can be used in place if x is pre-scaled by 1, 1/16, 1/256 ... per nibble position inside a word.
 

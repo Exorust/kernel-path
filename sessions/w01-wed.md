@@ -4,10 +4,10 @@
 
 Write the plan for a matrix-vector product y = W·x and predict its time before it exists. How close to the copy roof does it get, and does it beat `mx.matmul`?
 
-**Given.** W is [4096, 4096] in bf16 = 32 MB. x is [4096] bf16 = 8 KB, small enough to stay cached. y is [4096]. Every weight is read exactly once, so bytes moved is about 32 MB. Roof: 93 GB/s.
+**Given.** W is [4096, 4096] in bf16 = 32 MB. x is [4096] bf16 = 8 KB, small enough to stay cached. y is [4096]. Every weight is read exactly once, so bytes moved is about 32 MB. Roof: about 120 GB/s (`machine.json`, re-probe before the session).
 
 **Work out before running.**
-1. The floor time: 32 MB divided by 93 GB/s. Show the number in microseconds.
+1. The floor time: 32 MB divided by about 120 GB/s (`machine.json`, re-probe before the session). Show the number in microseconds.
 2. The thread mapping: how many output rows one simdgroup owns, how the 4096 columns are split across its 32 lanes, and where `simd_sum` goes. Draw it as one line, for example "simdgroup = 1 row, lane l reads columns l, l+32, l+64 ...".
 3. Total threads launched with that mapping, and whether that meets 10K to 20K threads in flight on 10 cores.
 4. Your predicted time and percent of roof. State whether you expect to beat `mx.matmul` and by how much.
