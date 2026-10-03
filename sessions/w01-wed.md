@@ -31,14 +31,34 @@ Write the plan for a matrix-vector product y = W·x and predict its time before 
 
 ## Before (written by me, before any code exists)
 - The [three questions](https://metalworking.vercel.app/war-stories/three-questions/): can I delete work? unlock an existing fast path? cut dispatch/sync overhead?
-- Bound (memory / compute / latency / launch) and why:
-- Plan (who owns what: thread, simdgroup, threadgroup; what lives in registers vs threadgroup memory):
-- Prediction, with the arithmetic shown:
+- Bound (memory / compute / latency / launch) and why: "Neither" (my answer, 2026-10-03). Correction of fact (Claude): the kernel needs about 125 billion ops/s at the floor against an estimated 3,300+ available, 4 percent, so math is far from its ceiling and memory is the bound.
+- Plan (who owns what: thread, simdgroup, threadgroup; what lives in registers vs threadgroup memory): one simdgroup per row; layout A, "I think A works better" (lane l reads columns l, l+32, ...), chosen from Tuesday's table; each lane keeps its partial sum in a register; simd_sum; lane 0 writes. Threads: 131,072, "It's enough".
+- Prediction, with the arithmetic shown: floor "260 microseconds" (32 MB / 120 GB/s = 267). Percent of roof: not predicted. Versus mx.matmul: "It will match afaik".
 - What would make me wrong:
 
 ## Ask (what I told Claude to write, one paragraph)
+Walked through the four questions with Claude, then Claude built from the plan above: [4096, 4096] half-precision W, one simdgroup per row, layout A, fp32 accumulation, simd_sum, baseline `mx.matmul`, parity against an fp32 reference, plus layout B as a second kernel to test the layout choice.
 
 ## After
-- Measured (time, x vs baseline, CV %, roofline %):
+- Measured (time, x vs baseline, CV %, roofline %): run 2026-10-03, `kernels/w01/wed_gemv.py` (local only), M5 32 GB, roof 122 GB/s, floor for 33.6 MB = 276 us.
+
+  | Kernel | Time at [4096, 4096] | vs mx.matmul | Percent of roof | Max abs error vs fp32 |
+  |---|---|---|---|---|
+  | layout A | 570 to 613 us (CV 3 to 4%) | 0.86x (slower) | 45 to 48 | 1.5e-06 |
+  | layout B | 638 us (CV 8.1%, flagged) | 0.80x (slower) | 43 | 1.3e-06 |
+  | mx.matmul, half | about 476 to 527 us | 1.00 | about 52 to 58 | 1.9e-03 |
+
+  A against B directly: 0.95x, inside the noise. No measurable layout difference at this shape.
+
+  Height sweep, same kernel, K = 4096:
+
+  | Rows | Bytes | layout A | mx.matmul |
+  |---|---|---|---|
+  | 64 | 0.5 MB | 205 us | 189 us |
+  | 1,024 | 8.4 MB | 260 us | 246 us |
+  | 4,096 | 33.6 MB | 606 us | 476 us |
+  | 16,384 | 134.2 MB | 1,605 us | 1,312 us |
+
+  Marginal rate from 4,096 to 16,384 rows: layout A 101 GB/s, mx.matmul 120 GB/s. Note (Claude): W is IEEE half (`mx.float16`), not bfloat16; the plan said "bf16" loosely. Same 2 bytes per weight.
 - Gap between prediction and measurement, explained in my words:
 - One thing I would try next:
