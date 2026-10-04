@@ -1,15 +1,16 @@
-// Week 1 Thu, file 2: out[i] = sum of a[32i .. 32i+31]. a is fp32 with 2^20 elements, out has 2^15.
+// Week 1 Thu, file 2: out[g] = sum of a[32g .. 32g+31]. a is fp32 with 2^20 elements, out has 2^15.
 // One simdgroup (32 threads) per output element.
 // Spec: sessions/w01-thu.md. Run: .venv/bin/python kernels/w01/thu_run.py reduce
+// Replace every ____ . The line below is read by thu_run.py, keep its format.
 //
-// TODO 0: replace each ? below. One simdgroup per output element: cheat sheet section 8.
-// grid=(?, ?, ?) threadgroup=(?, ?, ?)
+// Blank 0: one simdgroup per output element. Cheat sheet section 8.
+// grid=(____, ____, 1) threadgroup=(____, 1, 1)
 
-// TODO 1: this thread's lane (0 to 31) and which output element its simdgroup owns.
-//         Compare the first two lines of the kernel body in wed_gemv.py.
+uint lane = ____;           // Blank 1: 0 to 31, this thread's place in its simdgroup
+uint g    = ____;           // Blank 2: which output element this simdgroup owns
 
-// TODO 2: load the one value of a that belongs to this lane.
+float v = a[____];          // Blank 3: the one input value that belongs to this lane of group g
 
-// TODO 3: add the 32 lanes' values together. Cheat sheet section 5.
+float total = ____;         // Blank 4: add v across the 32 lanes. Cheat sheet section 5.
 
-// TODO 4: all 32 lanes now hold the same sum. Let exactly one of them store it.
+if (____) out[g] = total;   // Blank 5: all 32 lanes hold the same total. Let exactly one store it.

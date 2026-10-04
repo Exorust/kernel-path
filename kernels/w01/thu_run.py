@@ -24,7 +24,7 @@ if __name__ == "__main__":
     src = open(os.path.join(HERE, f"thu_{name}.metal")).read()
     m = re.search(r"^// grid=(\([\d, ]+\)) threadgroup=(\([\d, ]+\))", src, re.M)
     if not m:
-        sys.exit(f"thu_{name}.metal: TODO 0 is not filled in (the '// grid=(...) threadgroup=(...)' line)")
+        sys.exit(f"thu_{name}.metal: Blank 0 is not filled in (the '// grid=(...) threadgroup=(...)' line)")
     grid, tg = ast.literal_eval(m[1]), ast.literal_eval(m[2])
     k = mx.fast.metal_kernel(name=f"thu_{name}", input_names=list(inputs), output_names=["out"], source=src)
     run = lambda: k(inputs=list(inputs.values()), grid=grid, threadgroup=tg,

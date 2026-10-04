@@ -19,11 +19,12 @@ strangers. Roadmap: README.md. Checklist: progress.md.
 ## Thursday rule
 
 Thursday is the scaffolded rung. Claude writes the scaffold into `kernels/wNN/`: the Python
-call or `main`, the test data, the correctness check, the timing, and the kernel body as
-numbered `TODO` steps with no kernel code in them. Then Claude walks Chandu through the steps
+call or `main`, the test data, the correctness check, the timing, and the kernel body with
+its structure written (declarations, loops, the store) and the key expressions left as
+numbered `____` blanks. Then Claude walks Chandu through the steps
 one at a time: what the step must do, why, and where to look (`docs/metal-cheatsheet.md`,
-Wednesday's kernel, the references in `sessions/wNN-thu.md`). Chandu types every kernel line.
-Claude may hint, and may explain a compiler error, but gives a kernel line itself only after
+Wednesday's kernel, the references in `sessions/wNN-thu.md`). Chandu fills every blank.
+Claude may hint, and may explain a compiler error, but gives the content of a blank only after
 Chandu has made an attempt at it. Claude does not hand over a finished Thursday kernel. When
 Chandu says "done", Claude runs the file, reports the number, and diffs it against the AI
 version from Wednesday.

@@ -15,7 +15,7 @@ Check: 4096 halves = 8 KB of threadgroup memory. The limit is 32 KB.
 Reference pages allowed open: https://metalworking.vercel.app/techniques/cooperative-load/ and https://metalworking.vercel.app/kernels/steel-blockloader/
 
 ## Rules
-Scaffold and walkthrough. Claude writes the scaffold first: the Python call or `main`, the test data, the correctness check, and the kernel body as numbered `TODO` steps with no kernel code in them. Then Claude walks through the steps one at a time: what the step must do, why, and where to look. I type every kernel line myself. Claude gives a line itself only after I have made an attempt at it. `docs/metal-cheatsheet.md`, Wednesday's kernel, and the reference pages named above may be open.
+Scaffold and walkthrough. Claude writes the scaffold first: the Python call or `main`, the test data, the correctness check, and the kernel body with its structure written and the key expressions left as numbered `____` blanks. Then Claude walks through the blanks one at a time: what each must do, why, and where to look. I fill every blank myself. Claude gives the content of a blank only after I have made an attempt at it. `docs/metal-cheatsheet.md`, Wednesday's kernel, and the reference pages named above may be open.
 Say "done" and Claude runs the file and reports: compiled or the verbatim compiler error, output matches or not, time.
 
 ## After

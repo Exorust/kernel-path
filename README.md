@@ -12,7 +12,7 @@ Fifty sessions feed two kernels, which together are one thing: the linear-attent
 
 - A fused int4 matvec in `mx.fast.metal_kernel` benchmarked against MLX's own at M=1, 4, 8, and the same kernel in Triton benchmarked against Marlin on an H100
 - A chunkwise gated-delta prefill kernel for the vector-gated (Kimi Delta Attention) path, gated at 2x over the mlx-lm sequential scan at T=4096, and a Triton counterpart profiled against FLA
-- Ten Thursday files in MSL, CUDA, or PTX, every kernel line typed by me on a scaffold, with a step-by-step walkthrough
+- Ten Thursday files in MSL, CUDA, or PTX, every blank in the scaffold filled by me, with a step-by-step walkthrough
 - Fifty prediction files in `sessions/`, each with a number I wrote before the code existed
 - One small merged pull request or accepted issue in mlx-lm, and the chunkwise kernel shipped
 
@@ -39,10 +39,10 @@ Every week has the same shape. The "understand, apply, build" order is deliberat
 | Mon | **Understand.** One concept, one source, via `/learn read` | corrected blurt, 5 to 10 cards |
 | Tue | **Apply.** A microbenchmark of that concept. I predict, the AI writes, I explain the delta | `sessions/wNN-tue.md` with a measured number |
 | Wed | **Build.** Fold it into the week's kernel, profile it | kernel version + profile capture |
-| Thu | **Scaffold and walkthrough.** Claude writes the scaffold with the kernel body as numbered TODO steps, then walks me through them. I type every kernel line. Diff against Wednesday | my file, timed |
+| Thu | **Scaffold and walkthrough.** Claude writes the scaffold with the kernel body written except for numbered blanks, then walks me through them. I fill every blank. Diff against Wednesday | my file, timed |
 | Fri | **Judge.** Code closed, explain the kernel back, cards from the misses, one row in the numbers table | `~/learning/kernel-path/cards.md`, README row |
 
-The Thursday rule is in `CLAUDE.md`: Claude explains each step and gives a kernel line only after I have tried it. [docs/metal-cheatsheet.md](docs/metal-cheatsheet.md) stays open, one page with every Metal word a kernel body needs, each verified by running it.
+The Thursday rule is in `CLAUDE.md`: Claude explains each step and gives the content of a blank only after I have tried it. [docs/metal-cheatsheet.md](docs/metal-cheatsheet.md) stays open, one page with every Metal word a kernel body needs, each verified by running it.
 
 Every Tuesday, Wednesday, and Thursday already has its file in `sessions/` (`w01-tue.md` through `w10-wed.md`). Each opens with **the question**: what is being asked, the given shapes and numbers, the arithmetic to do before running anything, and what the request to Claude must contain. Open the file, answer in place, then start.
 
