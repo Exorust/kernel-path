@@ -35,7 +35,7 @@ Started on:
 - [ ] Mon · Nsight Compute vs Xcode shader profiler on the same kernel
 - [ ] Tue · fill the comparison table, both platforms, roofline %
 - [ ] Wed · arc 1 writeup
-- [ ] Thu · hand: GEMV in CUDA from memory
+- [ ] Thu · hand: GEMV in CUDA
 - [ ] Fri · entry PR or issue to mlx-lm (no AI footer) + blurt
 
 ### Arc 2 · chunkwise gated delta (prefill path)

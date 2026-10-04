@@ -1,4 +1,4 @@
-# w09-thu · One mbarrier, by hand (hand-written)
+# w09-thu · One mbarrier, by hand (scaffold and walkthrough)
 
 ## The spec
 
@@ -13,11 +13,11 @@ You need: the address of `bar` as a 32-bit shared-space operand, a `"=l"` output
 Reference allowed open: https://docs.nvidia.com/cuda/inline-ptx-assembly/index.html
 
 ## Rules
-No AI. Claude does not write, fix, or suggest code today. Only the reference pages named above may be open.
+Scaffold and walkthrough. Claude writes the scaffold first: the Python call or `main`, the test data, the correctness check, and the kernel body as numbered `TODO` steps with no kernel code in them. Then Claude walks through the steps one at a time: what the step must do, why, and where to look. I type every kernel line myself. Claude gives a line itself only after I have made an attempt at it. `docs/metal-cheatsheet.md`, Wednesday's kernel, and the reference pages named above may be open.
 Say "done" and Claude runs the file and reports: compiled or the verbatim compiler error, output matches or not, time.
 
 ## After
 - Compiled first try? If not, the error and what I had wrong:
 - Matches the reference output?
 - Time vs Wednesday's AI version:
-- The line I could not write from memory:
+- The step I needed the most help on:

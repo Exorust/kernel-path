@@ -1,6 +1,6 @@
 # Metal for kernel bodies: the cheat sheet
 
-Everything on this page was run as a real kernel on MLX 0.32.2 on 2026-10-03. Allowed open on Thursdays in weeks 1 to 3.
+Everything on this page was run as a real kernel on MLX 0.32.2 on 2026-10-03. Open on every Thursday.
 
 A kernel body in `mx.fast.metal_kernel` is C. You write only the inside of the function. MLX writes the signature. About a dozen words are specific to Metal, and they are all here.
 

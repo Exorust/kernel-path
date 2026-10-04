@@ -1,4 +1,4 @@
-# w02-thu · Dequantize one group of 64 (hand-written)
+# w02-thu · Dequantize one group of 64 (scaffold and walkthrough)
 
 ## The spec
 
@@ -13,13 +13,11 @@ Check you will run in Python afterwards: `mx.quantize` a random [1, 64] row with
 The packing rule is stated above; the syntax is on the cheat sheet.
 
 ## Rules
-No AI. Claude does not write, fix, or suggest code today.
-
-**Weeks 1 to 3 ramp.** Before starting, read Wednesday's AI-written kernel in `kernels/` for 5 minutes, then close it. While you write, `docs/metal-cheatsheet.md` is open, plus any reference page named above. From week 4, no cheat sheet.
+Scaffold and walkthrough. Claude writes the scaffold first: the Python call or `main`, the test data, the correctness check, and the kernel body as numbered `TODO` steps with no kernel code in them. Then Claude walks through the steps one at a time: what the step must do, why, and where to look. I type every kernel line myself. Claude gives a line itself only after I have made an attempt at it. `docs/metal-cheatsheet.md`, Wednesday's kernel, and the reference pages named above may be open.
 Say "done" and Claude runs the file and reports: compiled or the verbatim compiler error, output matches or not, time.
 
 ## After
 - Compiled first try? If not, the error and what I had wrong:
 - Matches the reference output?
 - Time vs Wednesday's AI version:
-- The line I could not write from memory:
+- The step I needed the most help on:

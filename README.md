@@ -12,7 +12,7 @@ Fifty sessions feed two kernels, which together are one thing: the linear-attent
 
 - A fused int4 matvec in `mx.fast.metal_kernel` benchmarked against MLX's own at M=1, 4, 8, and the same kernel in Triton benchmarked against Marlin on an H100
 - A chunkwise gated-delta prefill kernel for the vector-gated (Kimi Delta Attention) path, gated at 2x over the mlx-lm sequential scan at T=4096, and a Triton counterpart profiled against FLA
-- Ten Thursday files written by hand, from memory, in MSL, CUDA, or PTX
+- Ten Thursday files in MSL, CUDA, or PTX, every kernel line typed by me on a scaffold, with a step-by-step walkthrough
 - Fifty prediction files in `sessions/`, each with a number I wrote before the code existed
 - One small merged pull request or accepted issue in mlx-lm, and the chunkwise kernel shipped
 
@@ -39,10 +39,10 @@ Every week has the same shape. The "understand, apply, build" order is deliberat
 | Mon | **Understand.** One concept, one source, via `/learn read` | corrected blurt, 5 to 10 cards |
 | Tue | **Apply.** A microbenchmark of that concept. I predict, the AI writes, I explain the delta | `sessions/wNN-tue.md` with a measured number |
 | Wed | **Build.** Fold it into the week's kernel, profile it | kernel version + profile capture |
-| Thu | **Hand-write.** The week's rung from memory, in MSL, CUDA, or PTX. No AI. Diff against Wednesday | my file, timed |
+| Thu | **Scaffold and walkthrough.** Claude writes the scaffold with the kernel body as numbered TODO steps, then walks me through them. I type every kernel line. Diff against Wednesday | my file, timed |
 | Fri | **Judge.** Code closed, explain the kernel back, cards from the misses, one row in the numbers table | `~/learning/kernel-path/cards.md`, README row |
 
-Thursday is protected. See `CLAUDE.md`. It has a ramp: in weeks 1 to 3 you read Wednesday's kernel for 5 minutes first and keep [docs/metal-cheatsheet.md](docs/metal-cheatsheet.md) open, one page with every Metal word a kernel body needs, each verified by running it. From week 4 it is from memory.
+The Thursday rule is in `CLAUDE.md`: Claude explains each step and gives a kernel line only after I have tried it. [docs/metal-cheatsheet.md](docs/metal-cheatsheet.md) stays open, one page with every Metal word a kernel body needs, each verified by running it.
 
 Every Tuesday, Wednesday, and Thursday already has its file in `sessions/` (`w01-tue.md` through `w10-wed.md`). Each opens with **the question**: what is being asked, the given shapes and numbers, the arithmetic to do before running anything, and what the request to Claude must contain. Open the file, answer in place, then start.
 
@@ -95,7 +95,7 @@ The experiment: a copy kernel reads one array and writes it to another. It does 
 3. 15 min. Ask Claude for the GEMV, one simdgroup per output row, `simd_sum` for the dot product. Baseline: `mx.matmul`. Run `bench.paired` with `bytes_moved` set, and read the roofline percent.
 4. 5 min. Capture it. The [MLX Metal debugger doc](https://raw.githubusercontent.com/ml-explore/mlx/main/docs/src/dev/metal_debugger.rst) states the two preconditions people miss: run with `MTL_CAPTURE_ENABLED=1`, then `mx.metal.start_capture("w01.gputrace")`. Open in Xcode, find the kernel's duration in the Dependencies view. [profiling](https://metalworking.vercel.app/metal/profiling/) explains what Xcode will and will not show you. If the timing method itself feels shaky, [aurelbzo/mlx-metal-kernels](https://github.com/aurelbzo/mlx-metal-kernels) is a learning repo on the same API with a harness that reports medians and median absolute deviation.
 
-**Thu · Hand-write, no AI**
+**Thu · Scaffold and walkthrough**
 1. 15 min. `kernels/w01/thu_vadd.metal`: add two arrays, one element per thread. [Cheat sheet](docs/metal-cheatsheet.md) open. Also the [msl](https://metalworking.vercel.app/metal/msl/) page is open.
 2. 15 min. `kernels/w01/thu_reduce.metal`: sum an array using `simd_sum`, one simdgroup per 32 elements. Say "done" and Claude runs both and reports whether they compile and match.
 If `thu_vadd` does not compile in 15 minutes, stop there. The compiler error goes in the Friday cards.
@@ -134,7 +134,7 @@ The build: the week 1 bf16 matvec, but with the weight matrix stored as int4 gro
 3. 12 min. Ask Claude for the fused GEMV, group_size 64, 4 bits, using that pre-scale trick. Baseline: `mx.quantized_matmul`. Parity: max abs error against `mx.dequantize` then `mx.matmul`.
 4. 3 min. "After", including the roofline percent.
 
-**Thu · Hand-write, no AI**
+**Thu · Scaffold and walkthrough**
 1. 30 min. `kernels/w02/thu_dequant.metal`: unpack and dequantize one group of 64 from eight uint32 words, with scale and bias, writing 64 values. [Cheat sheet](docs/metal-cheatsheet.md) open. Say "done".
 
 **Fri · Judge**
@@ -170,7 +170,7 @@ The build: the week 2 int4 matvec extended so that one loaded weight word is use
 3. 15 min. Ask Claude for the batched kernel. Baseline: `mx.quantized_matmul` at M=1, 4, 8. The M=3 to 6 stall reported by MTPLX is the target; a 10-line fix gave them 2.24x.
 4. 5 min. "After", three rows.
 
-**Thu · Hand-write, no AI**
+**Thu · Scaffold and walkthrough**
 1. 30 min. `kernels/w03/thu_tiled_load.metal`: coalesced load of a [64, 64] bf16 tile from device memory into threadgroup memory, each thread loading a contiguous float4. [Cheat sheet](docs/metal-cheatsheet.md) open. [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/) and [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/) are the reference pages allowed open. Say "done".
 
 **Fri · Judge**
@@ -207,8 +207,8 @@ The build: the week 2 int4 matvec written in Triton for the H100, same group siz
 3. 12 min. Ask Claude for the Triton int4 GEMV, group_size 64, same format as week 2. Baseline: Marlin at M=1 and M=8. Dump the PTX and find the dequant.
 4. 3 min. "After". Inline asm in Triton, if the dequant needs it: [tl.inline_asm_elementwise](https://triton-lang.org/main/python-api/generated/triton.language.inline_asm_elementwise.html), note `pack` and that Triton uses `$n` where CUDA uses `%n`.
 
-**Thu · Hand-write, no AI**
-1. 30 min. `kernels/w04/thu_ptx_load.cu`: a CUDA kernel with one inline `ld.global.v4.b32`, from memory. Reference allowed open: [Inline PTX Assembly in CUDA](https://docs.nvidia.com/cuda/inline-ptx-assembly/index.html) §1.1 for the constraint syntax and the `%%` escape, §1.2 Pitfalls for `asm volatile` and the memory clobber. Say "done"; Claude compiles it on Modal and reports.
+**Thu · Scaffold and walkthrough**
+1. 30 min. `kernels/w04/thu_ptx_load.cu`: a CUDA kernel with one inline `ld.global.v4.b32`. Reference allowed open: [Inline PTX Assembly in CUDA](https://docs.nvidia.com/cuda/inline-ptx-assembly/index.html) §1.1 for the constraint syntax and the `%%` escape, §1.2 Pitfalls for `asm volatile` and the memory clobber. Say "done"; Claude compiles it on Modal and reports.
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session` on `kernels/w04/`. Explain, PTX closed, what the compiler did with your block size.
@@ -238,8 +238,8 @@ The session: no new kernel. Run Nsight Compute on the week 4 kernel on the H100,
 1. 5 min. Read "Quantifying Performance" in the [metal-flash-attention README](https://github.com/philipturner/metal-flash-attention): why it reports gigainstructions instead of GFLOPS, and that Apple has no native fp32 atomics. Your own [the-failures](https://metalworking.vercel.app/war-stories/the-failures/) before writing anything.
 2. 25 min. Write `writeups/arc1.md`: what was tried, what failed, the table, the honest ceiling, both machines named with dates.
 
-**Thu · Hand-write, no AI**
-1. 30 min. `kernels/w05/thu_gemv.cu`: bf16 GEMV in CUDA, one warp per row, warp shuffle reduction, from memory. Say "done"; Claude compiles and times it on Modal.
+**Thu · Scaffold and walkthrough**
+1. 30 min. `kernels/w05/thu_gemv.cu`: bf16 GEMV in CUDA, one warp per row, warp shuffle reduction. Say "done"; Claude compiles and times it on Modal.
 
 **Fri · Ship**
 1. 15 min. One small pull request or benchmark-backed issue to [mlx-lm](https://github.com/ml-explore/mlx-lm), written by you, no AI footer. This opens the contributor gate for week 10.
@@ -282,8 +282,8 @@ The build: not a Metal kernel yet. A slow, exact reference in float64 numpy that
 3. 10 min. Ask Claude for an fp64 numpy chunked reference built from naive.py, and freeze the tolerance: NMSE per dtype against the fp64 sequential reference, fp32 accumulation, fast math off, log-space decays.
 4. 3 min. "After".
 
-**Thu · Hand-write, no AI**
-1. 30 min. `kernels/w06/thu_scan.metal`: the sequential gated-delta scan, one simdgroup per (head, value row), lane-held state, from memory. This is the baseline everything is measured against. Reference allowed open: the three docstrings in [mlx-lm's gated_delta.py](https://raw.githubusercontent.com/ml-explore/mlx-lm/main/mlx_lm/models/gated_delta.py) (lines 568 to 573 give the scalar vs vector gate shapes) and `compute_g` at line 19. Say "done".
+**Thu · Scaffold and walkthrough**
+1. 30 min. `kernels/w06/thu_scan.metal`: the sequential gated-delta scan, one simdgroup per (head, value row), lane-held state. This is the baseline everything is measured against. Reference allowed open: the three docstrings in [mlx-lm's gated_delta.py](https://raw.githubusercontent.com/ml-explore/mlx-lm/main/mlx_lm/models/gated_delta.py) (lines 568 to 573 give the scalar vs vector gate shapes) and `compute_g` at line 19. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session`. Explain the chunkwise form on paper with C=2.
@@ -318,8 +318,8 @@ The build: the chunkwise algorithm for exactly one chunk of 64 tokens with no st
 3. 12 min. Ask Claude for the single-chunk kernel: intra-chunk log-space decays, the UT solve, outputs, chunk-end state, tiled with simdgroup_matrix. Gate against the fp64 reference.
 4. 3 min. "After".
 
-**Thu · Hand-write, no AI**
-1. 30 min. `kernels/w07/thu_sgmm.metal`: one 8 by 8 simdgroup_matrix load, multiply-accumulate, store, from memory. Reference allowed open: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/) and [bkvogel/metal_performance_testing](https://github.com/bkvogel/metal_performance_testing) `mat_mul_optimized_nv.metal`, a CUDA-sample port, for the shape of a tiled Metal kernel. Say "done".
+**Thu · Scaffold and walkthrough**
+1. 30 min. `kernels/w07/thu_sgmm.metal`: one 8 by 8 simdgroup_matrix load, multiply-accumulate, store. Reference allowed open: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/) and [bkvogel/metal_performance_testing](https://github.com/bkvogel/metal_performance_testing) `mat_mul_optimized_nv.metal`, a CUDA-sample port, for the shape of a tiled Metal kernel. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session`. Explain how 64 elements sit on 32 lanes.
@@ -356,8 +356,8 @@ The build: week 7's single-chunk kernel extended to loop over all chunks, carryi
 3. 12 min. Ask Claude for the full kernel. Run the chunkwise `harness.py all` (parity, determinism, paired bench against the mlx-lm scan). Then diff against `chunk_kernel_v7.py` and write down every place v7 chose differently and why.
 4. 3 min. "After". If the number is below 2x at T=4096, the Friday row says so and names the stage.
 
-**Thu · Hand-write, no AI**
-1. 30 min. `kernels/w08/thu_nobarrier.metal`: a reduction across a chunk using only simd shuffles, no threadgroup barrier, from memory. Say "done".
+**Thu · Scaffold and walkthrough**
+1. 30 min. `kernels/w08/thu_nobarrier.metal`: a reduction across a chunk using only simd shuffles, no threadgroup barrier. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session`. Explain why the gates are summed and not multiplied.
@@ -393,8 +393,8 @@ The build: a deliberately simplified version of the week 8 algorithm in Triton, 
 3. 14 min. Ask Claude for the simplified Triton kernel. Baseline: FLA. It will lose; the point is explaining by how much and why.
 4. 3 min. "After".
 
-**Thu · Hand-write, no AI**
-1. 30 min. `kernels/w09/thu_mbarrier.cu`: a CUDA kernel with one inline PTX mbarrier init, arrive, and wait, or one wgmma fence, from memory. Reference allowed open: the [Inline PTX Assembly](https://docs.nvidia.com/cuda/inline-ptx-assembly/index.html) doc. Say "done"; Claude compiles on Modal.
+**Thu · Scaffold and walkthrough**
+1. 30 min. `kernels/w09/thu_mbarrier.cu`: a CUDA kernel with one inline PTX mbarrier init, arrive, and wait, or one wgmma fence. Reference allowed open: the [Inline PTX Assembly](https://docs.nvidia.com/cuda/inline-ptx-assembly/index.html) doc. Say "done"; Claude compiles on Modal.
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session`. Explain TMA plus mbarrier without the diagram.

@@ -16,13 +16,17 @@ strangers. Roadmap: README.md. Checklist: progress.md.
 3. Chandu fills the "After" section in his own words. Claude corrects only errors of fact.
    Claude never writes the "After" explanation.
 
-## Thursday rule (protected, do not negotiate)
+## Thursday rule
 
-Thursday is the hand-written rung. Ramp: in weeks 1 to 3 Chandu may read Wednesday's kernel for 5 minutes first and keep `docs/metal-cheatsheet.md` open; from week 4 it is from memory. Claude does **not** write, fix, complete, or suggest
-kernel code on a Thursday session, even when asked. Claude may: point to the spec in `sessions/wNN-thu.md`, run the
-file when Chandu says "done", report the number, and diff it against the AI version from
-Wednesday. If a Thursday file does not compile, Claude reports the compiler error verbatim
-and stops.
+Thursday is the scaffolded rung. Claude writes the scaffold into `kernels/wNN/`: the Python
+call or `main`, the test data, the correctness check, the timing, and the kernel body as
+numbered `TODO` steps with no kernel code in them. Then Claude walks Chandu through the steps
+one at a time: what the step must do, why, and where to look (`docs/metal-cheatsheet.md`,
+Wednesday's kernel, the references in `sessions/wNN-thu.md`). Chandu types every kernel line.
+Claude may hint, and may explain a compiler error, but gives a kernel line itself only after
+Chandu has made an attempt at it. Claude does not hand over a finished Thursday kernel. When
+Chandu says "done", Claude runs the file, reports the number, and diffs it against the AI
+version from Wednesday.
 
 ## Friday rule
 
