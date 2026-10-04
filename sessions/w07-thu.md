@@ -2,7 +2,7 @@
 
 ## The spec
 
-**`kernels/w07/thu_sgmm.metal`**, 30 minutes, as a `metal_kernel` body.
+**`kernels/w07/thu_sgmm.py`**, 30 minutes, as a `metal_kernel` body.
 
 Inputs `a`, `b`: fp32 [8, 8]. Input `c`: fp32 [8, 8]. Output `out` = a·b + c.
 

@@ -2,7 +2,7 @@
 
 ## The spec
 
-**`kernels/w03/thu_tiled_load.metal`**, 30 minutes, as a `metal_kernel` body.
+**`kernels/w03/thu_tiled_load.py`**, 30 minutes, as a `metal_kernel` body.
 
 Input: `a`, bf16, a [256, 256] matrix. Output: `out`, bf16 [256, 256], a copy, but made through threadgroup memory: each threadgroup owns one [64, 64] tile, loads it into a `threadgroup half tile[64*64]` array, waits at a barrier, then writes it out.
 

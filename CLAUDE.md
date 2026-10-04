@@ -18,7 +18,8 @@ strangers. Roadmap: README.md. Checklist: progress.md.
 
 ## Thursday rule
 
-Thursday is the scaffolded rung. Claude writes the scaffold into `kernels/wNN/`: the Python
+Thursday is the scaffolded rung. Claude writes the scaffold into `kernels/wNN/` as one file that
+runs by itself at any time and reports how many blanks are left. It contains: the Python
 call or `main`, the test data, the correctness check, the timing, and the kernel body with
 its structure written (declarations, loops, the store) and the key expressions left as
 numbered `____` blanks. Then Claude walks Chandu through the steps

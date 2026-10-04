@@ -2,7 +2,7 @@
 
 ## The spec
 
-**`kernels/w08/thu_nobarrier.metal`**, 30 minutes, as a `metal_kernel` body.
+**`kernels/w08/thu_nobarrier.py`**, 30 minutes, as a `metal_kernel` body.
 
 Input `a`: fp32 [N, 64], N rows of one chunk each. Output `out`: fp32 [N], the sum of each row.
 

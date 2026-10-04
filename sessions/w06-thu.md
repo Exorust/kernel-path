@@ -2,7 +2,7 @@
 
 ## The spec
 
-**`kernels/w06/thu_scan.metal`**, 30 minutes, as a `metal_kernel` body. Scalar gate only.
+**`kernels/w06/thu_scan.py`**, 30 minutes, as a `metal_kernel` body. Scalar gate only.
 
 Shapes: q, k are [T, Dk]; v is [T, Dv]; g, beta are [T]; Dk = Dv = 128; one head. State S is [Dv, Dk], starting at zero. Output y is [T, Dv].
 

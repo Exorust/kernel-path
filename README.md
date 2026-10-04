@@ -96,8 +96,8 @@ The experiment: a copy kernel reads one array and writes it to another. It does 
 4. 5 min. Capture it. The [MLX Metal debugger doc](https://raw.githubusercontent.com/ml-explore/mlx/main/docs/src/dev/metal_debugger.rst) states the two preconditions people miss: run with `MTL_CAPTURE_ENABLED=1`, then `mx.metal.start_capture("w01.gputrace")`. Open in Xcode, find the kernel's duration in the Dependencies view. [profiling](https://metalworking.vercel.app/metal/profiling/) explains what Xcode will and will not show you. If the timing method itself feels shaky, [aurelbzo/mlx-metal-kernels](https://github.com/aurelbzo/mlx-metal-kernels) is a learning repo on the same API with a harness that reports medians and median absolute deviation.
 
 **Thu · Scaffold and walkthrough**
-1. 15 min. `kernels/w01/thu_vadd.metal`: add two arrays, one element per thread. [Cheat sheet](docs/metal-cheatsheet.md) open. Also the [msl](https://metalworking.vercel.app/metal/msl/) page is open.
-2. 15 min. `kernels/w01/thu_reduce.metal`: sum an array using `simd_sum`, one simdgroup per 32 elements. Say "done" and Claude runs both and reports whether they compile and match.
+1. 15 min. `kernels/w01/thu_vadd.py`: add two arrays, one element per thread. [Cheat sheet](docs/metal-cheatsheet.md) open. Also the [msl](https://metalworking.vercel.app/metal/msl/) page is open.
+2. 15 min. `kernels/w01/thu_reduce.py`: sum an array using `simd_sum`, one simdgroup per 32 elements. Say "done" and Claude runs both and reports whether they compile and match.
 If `thu_vadd` does not compile in 15 minutes, stop there. The compiler error goes in the Friday cards.
 
 **Fri · Judge**
@@ -135,7 +135,7 @@ The build: the week 1 bf16 matvec, but with the weight matrix stored as int4 gro
 4. 3 min. "After", including the roofline percent.
 
 **Thu · Scaffold and walkthrough**
-1. 30 min. `kernels/w02/thu_dequant.metal`: unpack and dequantize one group of 64 from eight uint32 words, with scale and bias, writing 64 values. [Cheat sheet](docs/metal-cheatsheet.md) open. Say "done".
+1. 30 min. `kernels/w02/thu_dequant.py`: unpack and dequantize one group of 64 from eight uint32 words, with scale and bias, writing 64 values. [Cheat sheet](docs/metal-cheatsheet.md) open. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, then `/learn session` on `kernels/w02/` with files closed. Explain why the activation is pre-scaled and where the bias term goes.
@@ -171,7 +171,7 @@ The build: the week 2 int4 matvec extended so that one loaded weight word is use
 4. 5 min. "After", three rows.
 
 **Thu · Scaffold and walkthrough**
-1. 30 min. `kernels/w03/thu_tiled_load.metal`: coalesced load of a [64, 64] bf16 tile from device memory into threadgroup memory, each thread loading a contiguous float4. [Cheat sheet](docs/metal-cheatsheet.md) open. [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/) and [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/) are the reference pages allowed open. Say "done".
+1. 30 min. `kernels/w03/thu_tiled_load.py`: coalesced load of a [64, 64] bf16 tile from device memory into threadgroup memory, each thread loading a contiguous float4. [Cheat sheet](docs/metal-cheatsheet.md) open. [cooperative-load](https://metalworking.vercel.app/techniques/cooperative-load/) and [steel-blockloader](https://metalworking.vercel.app/kernels/steel-blockloader/) are the reference pages allowed open. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session` on `kernels/w03/`. Explain the stall and the fix without the code.
@@ -283,7 +283,7 @@ The build: not a Metal kernel yet. A slow, exact reference in float64 numpy that
 4. 3 min. "After".
 
 **Thu · Scaffold and walkthrough**
-1. 30 min. `kernels/w06/thu_scan.metal`: the sequential gated-delta scan, one simdgroup per (head, value row), lane-held state. This is the baseline everything is measured against. Reference allowed open: the three docstrings in [mlx-lm's gated_delta.py](https://raw.githubusercontent.com/ml-explore/mlx-lm/main/mlx_lm/models/gated_delta.py) (lines 568 to 573 give the scalar vs vector gate shapes) and `compute_g` at line 19. Say "done".
+1. 30 min. `kernels/w06/thu_scan.py`: the sequential gated-delta scan, one simdgroup per (head, value row), lane-held state. This is the baseline everything is measured against. Reference allowed open: the three docstrings in [mlx-lm's gated_delta.py](https://raw.githubusercontent.com/ml-explore/mlx-lm/main/mlx_lm/models/gated_delta.py) (lines 568 to 573 give the scalar vs vector gate shapes) and `compute_g` at line 19. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session`. Explain the chunkwise form on paper with C=2.
@@ -319,7 +319,7 @@ The build: the chunkwise algorithm for exactly one chunk of 64 tokens with no st
 4. 3 min. "After".
 
 **Thu · Scaffold and walkthrough**
-1. 30 min. `kernels/w07/thu_sgmm.metal`: one 8 by 8 simdgroup_matrix load, multiply-accumulate, store. Reference allowed open: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/) and [bkvogel/metal_performance_testing](https://github.com/bkvogel/metal_performance_testing) `mat_mul_optimized_nv.metal`, a CUDA-sample port, for the shape of a tiled Metal kernel. Say "done".
+1. 30 min. `kernels/w07/thu_sgmm.py`: one 8 by 8 simdgroup_matrix load, multiply-accumulate, store. Reference allowed open: [simdgroup-matrix](https://metalworking.vercel.app/metal/simdgroup-matrix/) and [bkvogel/metal_performance_testing](https://github.com/bkvogel/metal_performance_testing) `mat_mul_optimized_nv.metal`, a CUDA-sample port, for the shape of a tiled Metal kernel. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session`. Explain how 64 elements sit on 32 lanes.
@@ -357,7 +357,7 @@ The build: week 7's single-chunk kernel extended to loop over all chunks, carryi
 4. 3 min. "After". If the number is below 2x at T=4096, the Friday row says so and names the stage.
 
 **Thu · Scaffold and walkthrough**
-1. 30 min. `kernels/w08/thu_nobarrier.metal`: a reduction across a chunk using only simd shuffles, no threadgroup barrier. Say "done".
+1. 30 min. `kernels/w08/thu_nobarrier.py`: a reduction across a chunk using only simd shuffles, no threadgroup barrier. Say "done".
 
 **Fri · Judge**
 1. 10 min. `/learn review`, `/learn session`. Explain why the gates are summed and not multiplied.
@@ -459,14 +459,14 @@ Filled in on Fridays. Machine, MLX version, and date on every row. Empty until m
 
 | Week | File | Compiled first try | Time vs Wednesday's AI version |
 |---|---|---|---|
-| 1 | thu_vadd.metal, thu_reduce.metal | | |
-| 2 | thu_dequant.metal | | |
-| 3 | thu_tiled_load.metal | | |
+| 1 | thu_vadd.py, thu_reduce.py | | |
+| 2 | thu_dequant.py | | |
+| 3 | thu_tiled_load.py | | |
 | 4 | thu_ptx_load.cu | | |
 | 5 | thu_gemv.cu | | |
-| 6 | thu_scan.metal | | |
-| 7 | thu_sgmm.metal | | |
-| 8 | thu_nobarrier.metal | | |
+| 6 | thu_scan.py | | |
+| 7 | thu_sgmm.py | | |
+| 8 | thu_nobarrier.py | | |
 | 9 | thu_mbarrier.cu | | |
 
 ## After week 10

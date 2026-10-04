@@ -2,11 +2,11 @@
 
 ## The spec
 
-Two files, 15 minutes each, as `mx.fast.metal_kernel` bodies (body only; MLX generates the signature).
+Two files, 15 minutes each, each a runnable Python file with an `mx.fast.metal_kernel` body inside (body only; MLX generates the signature).
 
-**`kernels/w01/thu_vadd.metal`.** Inputs `a`, `b`: fp32 arrays of 2^20 elements. Output `out` = a + b. One element per thread. You need: the thread's index in the grid, two loads, one store. Then decide `grid` and `threadgroup` for the Python call and write them in a comment at the top.
+**`kernels/w01/thu_vadd.py`.** Inputs `a`, `b`: fp32 arrays of 2^20 elements. Output `out` = a + b. One element per thread. You need: the thread's index in the grid, two loads, one store. Then decide `grid` and `threadgroup` for the Python call.
 
-**`kernels/w01/thu_reduce.metal`.** Input `a`: fp32, 2^20 elements. Output `out`: 2^15 elements, where out[i] is the sum of a[32i .. 32i+31]. One simdgroup per output element: each lane loads one value, `simd_sum` adds the 32, and exactly one lane writes. You need: the lane index, the simdgroup's index, and a guard so only lane 0 stores.
+**`kernels/w01/thu_reduce.py`.** Input `a`: fp32, 2^20 elements. Output `out`: 2^15 elements, where out[i] is the sum of a[32i .. 32i+31]. One simdgroup per output element: each lane loads one value, `simd_sum` adds the 32, and exactly one lane writes. You need: the lane index, the simdgroup's index, and a guard so only lane 0 stores.
 
 Reference page allowed open: https://metalworking.vercel.app/metal/msl/
 

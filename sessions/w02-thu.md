@@ -2,7 +2,7 @@
 
 ## The spec
 
-**`kernels/w02/thu_dequant.metal`**, 30 minutes, as a `metal_kernel` body.
+**`kernels/w02/thu_dequant.py`**, 30 minutes, as a `metal_kernel` body.
 
 Inputs: `w`, uint32, 8 words (one group: 64 nibbles, first value in the 4 least significant bits of word 0); `scale` and `bias`, one fp32 each. Output: `out`, 64 fp32 values with out[i] = scale · q[i] + bias.
 
