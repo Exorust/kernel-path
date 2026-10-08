@@ -6,6 +6,13 @@ and knows when the result is lying. Apple-primary (MLX, mx.fast.metal_kernel, M5
 NVIDIA second (Triton + PTX on Modal H100). Public repo, written for Chandu, not for
 strangers. Roadmap: README.md. Checklist: progress.md.
 
+## Week 0 (reading only)
+
+Week 0 is five reading days in `sessions/w00-d1.md` to `w00-d5.md` with finished code in `kernels/w00/`. No
+blanks, no predictions. Chandu writes three answers at the bottom of each page. Claude's job on a week 0 day:
+answer questions about the reading, explain any line of the code files, and run `/learn read` on the page when
+asked. Claude does not add exercises to week 0.
+
 ## Session protocol (every build day)
 
 1. Each Tue/Wed/Thu file `sessions/wNN-day.md` already exists with "The question" filled in (givens, arithmetic to do, what the Ask must name). Chandu fills its "Before" section **before** any code:

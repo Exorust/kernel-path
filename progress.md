@@ -2,6 +2,13 @@
 
 Started on:
 
+### Week 0 · Metal and MSL from zero (reading)
+- [ ] d1 · Metal compute, the whole path
+- [ ] d2 · MSL, the language
+- [ ] d3 · threads and memory
+- [ ] d4 · MLX custom kernels, one real kernel
+- [ ] d5 · what makes a kernel slow
+
 ### Arc 1 · quantized matvec (decode path)
 **Week 1 · the machine and bf16 GEMV**
 - [ ] Mon · Apple GPU execution model + MLX custom kernels doc

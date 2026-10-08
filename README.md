@@ -4,6 +4,8 @@ Ten weeks, 30 minutes a day, to become a kernel director on Apple silicon first 
 
 A kernel director reads a profile, names the bound, specifies the tile and memory plan, predicts the number, directs an AI to write the code, and knows when the result is lying. This repo is the roadmap for getting there, plus the record of every prediction I made and what the hardware said back. Public, but written for me. If you have finished [time-to-first-token](https://github.com/Exorust/kernel-engineering) or equivalent and know what a roofline is, it will work for you too.
 
+**Start here if you know no Metal.** Week 0 below is five days of reading and code to read, before week 1 asks you to predict anything. Skip it only if you can already read a Metal kernel body line by line and say what a kernel is waiting on.
+
 Fifty sessions feed two kernels, which together are one thing: the linear-attention layer of the Qwen3.5 / Qwen3-Next / Kimi Linear model family as it runs on MLX. Weeks 1 to 5 build the decode path, a quantized matvec. Weeks 6 to 10 build the prefill path, a chunkwise gated-delta kernel. Both get built on the Mac first, ported to an H100 second, and compared.
 
 ---
@@ -26,6 +28,7 @@ Someone who can hand-write flash attention on a whiteboard. Attention is the thi
 |---|---|
 | Session | 30 minutes |
 | Per week | 5 sessions + 2 buffer days (catch-up only, never new material) |
+| Week 0 | 5 reading sessions before week 1, no GPU rental |
 | Total | 10 weeks, 50 sessions, 25 hours |
 | Apple hardware | the Mac you own (this plan was run on an M5, 32 GB) |
 | NVIDIA hardware | Modal H100, about $4 an hour, per-second billing, ~14 sessions, estimate $30 to $40 total; one optional B200 session |
@@ -62,11 +65,31 @@ New to Metal? Read [docs/metal-cheatsheet.md](docs/metal-cheatsheet.md) first. A
 
 ---
 
+## Week 0 · Metal and MSL from zero (reading)
+
+Week 0 has its own shape. Every day is 15 minutes of reading, 8 minutes of code to read and run, and three written answers in the day's page. No predictions, no blanks, no GPU rental. Outside articles come first, your own [metalworking](https://metalworking.vercel.app/) pages second, and a short page written here only where no readable outside article exists, which was the case for day 2.
+
+**By Friday you can say:** Metal is Apple's interface to the GPU and MSL is the C++-based language its kernels are written in. A kernel runs once per thread over a grid; threads come in simdgroups of 32 inside threadgroups; a value lives in thread, threadgroup, or device memory. `mx.fast.metal_kernel` wraps the whole Metal path and I write only the body. A kernel waits on memory, on math, or on the launch, and I can say which.
+
+| Day | Page | Main reading | Code to read |
+|---|---|---|---|
+| 1 | [sessions/w00-d1.md](sessions/w00-d1.md) · Metal compute, the whole path | Apple, [Performing Calculations on a GPU](https://developer.apple.com/documentation/metal/performing-calculations-on-a-gpu) | Apple's `add_arrays`, in C and in MSL |
+| 2 | [sessions/w00-d2.md](sessions/w00-d2.md) · MSL, the language | your [msl](https://metalworking.vercel.app/metal/msl/) page plus one page here, cited to the MSL specification 4.1 | `kernels/w00/day2_language.py`, and MLX's own `unary_v` kernel |
+| 3 | [sessions/w00-d3.md](sessions/w00-d3.md) · threads and memory | Apple, [Creating threads and threadgroups](https://developer.apple.com/documentation/metal/creating-threads-and-threadgroups), and the A14 tech talk's `simd_sum` walkthrough | `kernels/w00/day3_threads.py` |
+| 4 | [sessions/w00-d4.md](sessions/w00-d4.md) · MLX custom kernels | the [MLX custom kernels doc](https://raw.githubusercontent.com/ml-explore/mlx/main/docs/src/dev/custom_metal_kernels.rst) and [Lazy Evaluation](https://ml-explore.github.io/mlx/build/html/usage/lazy_evaluation.html) | `kernels/w00/day4_first_kernel.py`, and the real mlx-lm gated-delta kernel, verbatim and in plain MSL |
+| 5 | [sessions/w00-d5.md](sessions/w00-d5.md) · what makes a kernel slow | Horace He, [Making Deep Learning Go Brrrr](https://horace.io/brrr_intro.html), and Khronos on [latency hiding](https://docs.vulkan.org/tutorial/latest/Advanced_Vulkan_Compute/02_Compute_Architecture/03_occupancy_and_latency_hiding.html) | three timing files in `kernels/w00/` that print the arithmetic next to the measurement |
+
+Every code file runs with `.venv/bin/python kernels/w00/<file>.py`, needs nothing filled in, and prints its output under the code that made it. Measured on this M5 on 2026-10-04 and 2026-10-08: memory speed 112 to 122 GB/s, launch cost about 195 microseconds back to back and about 450 after a 20 millisecond pause, about 700 billion simple operations per second, and the same 32 MB row sum 59 times slower with 64 threads than with 64,000.
+
+---
+
 ## Arc 1 · the decode path: quantized matvec (weeks 1 to 5)
 
 Decode is bandwidth-bound; TTFT already taught why. A matvec over int4 weights moves 4 bits per weight instead of 16 and dequantizes in registers. The whole game is percent of peak bandwidth, and MLX's stock kernel has a known soft spot at small batch (M=3 to 6).
 
 ### Week 1 · the machine and bf16 GEMV
+
+Assumes week 0 or the equivalent: you can read a kernel body and know what a threadgroup is.
 
 **By Friday you can say:** a Metal kernel is a grid of threads, grouped 32 at a time into simdgroups that run in lockstep, grouped again into threadgroups that share a small fast memory. A matrix-vector product (GEMV) on this machine is limited by how fast memory can be read, about 120 GB/s on this M5, and the only score that matters is what percent of that your kernel reaches.
 
