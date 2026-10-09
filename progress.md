@@ -2,11 +2,11 @@
 
 
 **Week 1**
-- [ ] w1 d1 · The chip
-- [ ] w1 d2 · The GPU core
-- [ ] w1 d3 · Metal
-- [ ] w1 d4 · MLX
-- [ ] w1 d5 · Who writes Apple kernels today
+- [ ] w1 d1 · The chip (written)
+- [ ] w1 d2 · The GPU core (written)
+- [ ] w1 d3 · Metal (written)
+- [ ] w1 d4 · MLX (written)
+- [ ] w1 d5 · Who writes Apple kernels today (written)
 
 **Week 2**
 - [ ] w2 d1 · Roofline on Apple
