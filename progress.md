@@ -4,9 +4,12 @@
 **Week 1**
 - [ ] w1 d1 · The chip
 - [ ] w1 d2 · The GPU core
-- [ ] w1 d3 · Metal
-- [ ] w1 d4 · MLX
-- [ ] w1 d5 · Who writes Apple kernels today
+- [ ] w1 d3 · Metal, the path from source to GPU
+- [ ] w1 d4 · MSL, the language
+- [ ] w1 d5 · Threads and memory inside a kernel
+- [ ] w1 d6 · MLX
+- [ ] w1 d7 · Metal 4, the M5 accelerators, and the Neural Engine
+- [ ] w1 d8 · Who writes Apple kernels today
 
 **Week 2**
 - [ ] w2 d1 · Roofline on Apple

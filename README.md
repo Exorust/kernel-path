@@ -1,18 +1,21 @@
 # kernel-path
 
-Six weeks, thirty minutes a day, to understand the Apple GPU stack and the kernels people write for it well enough to build your own by directing an AI. Four weeks on Apple silicon, two on NVIDIA for contrast and for the kernels that made news there.
+Six weeks, thirty minutes a day, to understand the Apple GPU stack and the kernels people write for it well enough to build your own by directing an AI. Four weeks on Apple silicon, the first of them eight days, and two on NVIDIA for contrast and for the kernels that made news there.
 
 Each day is one page in `weeks/`: a short narrative with a citation on every number, the one primary source to read, the numbers to remember, and five questions. You write your answers at the bottom of the page and run `/learn read weeks/wN/dM.md` to have them checked and turned into cards. Nothing to install until you choose to run something.
 
 ## The thirty days
 
-### Week 1 · The Apple stack, big picture
+### Week 1 · The Apple stack, big picture (eight days)
 
-- **[Day 1 · The chip](weeks/w1/d1.md)** — One system on a chip, one memory pool, four engines. Bandwidth by tier from 153 GB/s on the M5 to 614 on the M5 Max, and why there is no datacenter part.
-- **[Day 2 · The GPU core](weeks/w1/d2.md)** — Simdgroups of 32, large registers and small caches, threadgroup memory limits, and how Dynamic Caching changed occupancy from the M3 on.
-- **[Day 3 · Metal](weeks/w1/d3.md)** — The seven objects from source to GPU, simdgroup_matrix as Apple's tensor core, and the 2026 guide that drops two CUDA habits.
-- **[Day 4 · MLX](weeks/w1/d4.md)** — Lazy graphs, how an op becomes a kernel, mx.compile and mx.fast, and the one door for your own kernels: mx.fast.metal_kernel.
-- **[Day 5 · Who writes Apple kernels today](weeks/w1/d5.md)** — Apple's MLX team, llama.cpp, MPS and MPP, and a small community whose best repositories stop at the M2. What is actually missing.
+- **[Day 1 · The chip](weeks/w1/d1.md)** — One system on a chip, one memory pool, four engines. Bandwidth by tier from 153 GB/s on the M5 to 614 on the M5 Max, and a worked decode floor from bandwidth alone.
+- **[Day 2 · The GPU core](weeks/w1/d2.md)** — Simdgroups of 32, large registers and small caches, threadgroup memory limits, occupancy, and how Dynamic Caching changed it from the M3 on. A worked example of how many threads fill ten cores.
+- **[Day 3 · Metal, the path from source to GPU](weeks/w1/d3.md)** — Apple's `add_arrays` in C and in MSL, line by line, then the seven objects every launch passes through, and the per-launch cost measured on an M5.
+- **[Day 4 · MSL, the language](weeks/w1/d4.md)** — C++17 with things removed: types, literals, vectors, casts, the four address spaces, attributes, and a generated kernel read line by line. What `double` and `printf` do when you try them.
+- **[Day 5 · Threads and memory inside a kernel](weeks/w1/d5.md)** — How a thread learns where it is, `simd_sum` and shuffles, the one-writer rule, threadgroup scratch with a barrier, and a row-sum kernel worked in full.
+- **[Day 6 · MLX](weeks/w1/d6.md)** — Lazy graphs, the chain from a Python op to a Metal kernel, `mx.compile` and `mx.fast`, and a custom kernel call mapped argument by argument to days 2 to 5.
+- **[Day 7 · Metal 4, the M5 accelerators, and the Neural Engine](weeks/w1/d7.md)** — Two engines, two paths. MTLTensor, the machine-learning encoder, Metal Performance Primitives, and MLX's NAX kernels, against Core ML's 10x on the Neural Engine with no kernel control.
+- **[Day 8 · Who writes Apple kernels today](weeks/w1/d8.md)** — Apple's MLX team, llama.cpp, MPS and MPP, and a small community whose best repositories stop at the M2, with a table of which file to open for each question.
 
 ### Week 2 · Kernel families and the ideas that carry across hardware
 
