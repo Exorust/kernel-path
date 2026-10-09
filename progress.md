@@ -9,11 +9,11 @@
 - [ ] w1 d5 · Who writes Apple kernels today (written)
 
 **Week 2**
-- [ ] w2 d1 · Roofline on Apple
-- [ ] w2 d2 · Elementwise, reduction, scan, softmax
-- [ ] w2 d3 · Matrix multiply
-- [ ] w2 d4 · Attention
-- [ ] w2 d5 · Quantized matvec
+- [ ] w2 d1 · Roofline on Apple (written)
+- [ ] w2 d2 · Elementwise, reduction, scan, softmax (written)
+- [ ] w2 d3 · Matrix multiply (written)
+- [ ] w2 d4 · Attention (written)
+- [ ] w2 d5 · Quantized matvec (written)
 
 **Week 3**
 - [ ] w3 d1 · llama.cpp's Metal backend
