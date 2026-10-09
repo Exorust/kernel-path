@@ -16,11 +16,11 @@
 - [ ] w2 d5 · Quantized matvec (written)
 
 **Week 3**
-- [ ] w3 d1 · llama.cpp's Metal backend
-- [ ] w3 d2 · MLX steel and the M5 neural accelerators
-- [ ] w3 d3 · Linear attention on MLX
-- [ ] w3 d4 · Expert paging and MoE on Apple
-- [ ] w3 d5 · Launch overhead at scale
+- [ ] w3 d1 · llama.cpp's Metal backend (written)
+- [ ] w3 d2 · MLX steel and the M5 neural accelerators (written)
+- [ ] w3 d3 · Linear attention on MLX (written)
+- [ ] w3 d4 · Expert paging and MoE on Apple (written)
+- [ ] w3 d5 · Launch overhead at scale (written)
 
 **Week 4**
 - [ ] w4 d1 · The feedback-loop problem on Metal
