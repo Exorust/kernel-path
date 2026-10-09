@@ -1,6 +1,3 @@
 .venv/
 __pycache__/
-machine.json
-*.json
-!sessions/*.json
 .DS_Store
