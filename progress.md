@@ -2,39 +2,39 @@
 
 
 **Week 1**
-- [ ] w1 d1 · The chip (written)
-- [ ] w1 d2 · The GPU core (written)
-- [ ] w1 d3 · Metal (written)
-- [ ] w1 d4 · MLX (written)
-- [ ] w1 d5 · Who writes Apple kernels today (written)
+- [ ] w1 d1 · The chip
+- [ ] w1 d2 · The GPU core
+- [ ] w1 d3 · Metal
+- [ ] w1 d4 · MLX
+- [ ] w1 d5 · Who writes Apple kernels today
 
 **Week 2**
-- [ ] w2 d1 · Roofline on Apple (written)
-- [ ] w2 d2 · Elementwise, reduction, scan, softmax (written)
-- [ ] w2 d3 · Matrix multiply (written)
-- [ ] w2 d4 · Attention (written)
-- [ ] w2 d5 · Quantized matvec (written)
+- [ ] w2 d1 · Roofline on Apple
+- [ ] w2 d2 · Elementwise, reduction, scan, softmax
+- [ ] w2 d3 · Matrix multiply
+- [ ] w2 d4 · Attention
+- [ ] w2 d5 · Quantized matvec
 
 **Week 3**
-- [ ] w3 d1 · llama.cpp's Metal backend (written)
-- [ ] w3 d2 · MLX steel and the M5 neural accelerators (written)
-- [ ] w3 d3 · Linear attention on MLX (written)
-- [ ] w3 d4 · Expert paging and MoE on Apple (written)
-- [ ] w3 d5 · Launch overhead at scale (written)
+- [ ] w3 d1 · llama.cpp's Metal backend
+- [ ] w3 d2 · MLX steel and the M5 neural accelerators
+- [ ] w3 d3 · Linear attention on MLX
+- [ ] w3 d4 · Expert paging and MoE on Apple
+- [ ] w3 d5 · Launch overhead at scale
 
 **Week 4**
-- [ ] w4 d1 · The feedback-loop problem on Metal (written)
-- [ ] w4 d2 · Profiling on Apple (written)
-- [ ] w4 d3 · AI-generated kernels, the evidence (written)
-- [ ] w4 d4 · Directing an AI (written)
-- [ ] w4 d5 · Capstone brief (written)
+- [ ] w4 d1 · The feedback-loop problem on Metal
+- [ ] w4 d2 · Profiling on Apple
+- [ ] w4 d3 · AI-generated kernels, the evidence
+- [ ] w4 d4 · Directing an AI
+- [ ] w4 d5 · Capstone brief
 
 **Week 5**
-- [ ] w5 d1 · NVIDIA architecture against Apple (written)
-- [ ] w5 d2 · CUDA, PTX, SASS, Triton, CUTLASS (written)
-- [ ] w5 d3 · The matmul ladder on NVIDIA (written)
-- [ ] w5 d4 · Hopper: TMA, wgmma, the H100 worklog (written)
-- [ ] w5 d5 · Low precision and Blackwell (written)
+- [ ] w5 d1 · NVIDIA architecture against Apple
+- [ ] w5 d2 · CUDA, PTX, SASS, Triton, CUTLASS
+- [ ] w5 d3 · The matmul ladder on NVIDIA
+- [ ] w5 d4 · Hopper: TMA, wgmma, the H100 worklog
+- [ ] w5 d5 · Low precision and Blackwell
 
 **Week 6**
 - [ ] w6 d1 · FlashAttention 1 to 4

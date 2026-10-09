@@ -13,4 +13,4 @@ Each day is one page in `weeks/`: a short narrative with a citation on every num
 | 5 | NVIDIA, the big picture | architecture against Apple · CUDA, PTX, Triton, CUTLASS · the matmul ladder · Hopper: TMA and wgmma · low precision and Blackwell |
 | 6 | NVIDIA kernels that made news | FlashAttention 1 to 4 · megakernels · serving kernels · linear attention on NVIDIA · profiling, AI kernels, second capstone brief |
 
-Pages are being written week by week; a day with only a title is not written yet. Raw research behind the pages is in `research/`, one report per week. The previous version of this repository, a ten-week build plan, is on the `v1` branch.
+All thirty pages are written. Raw research behind the pages is in `research/`, one report per week. The previous version of this repository, a ten-week build plan, is on the `v1` branch.
