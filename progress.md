@@ -23,11 +23,11 @@
 - [ ] w3 d5 · Launch overhead at scale (written)
 
 **Week 4**
-- [ ] w4 d1 · The feedback-loop problem on Metal
-- [ ] w4 d2 · Profiling on Apple
-- [ ] w4 d3 · AI-generated kernels, the evidence
-- [ ] w4 d4 · Directing an AI
-- [ ] w4 d5 · Capstone brief
+- [ ] w4 d1 · The feedback-loop problem on Metal (written)
+- [ ] w4 d2 · Profiling on Apple (written)
+- [ ] w4 d3 · AI-generated kernels, the evidence (written)
+- [ ] w4 d4 · Directing an AI (written)
+- [ ] w4 d5 · Capstone brief (written)
 
 **Week 5**
 - [ ] w5 d1 · NVIDIA architecture against Apple
