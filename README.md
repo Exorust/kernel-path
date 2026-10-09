@@ -1,8 +1,8 @@
 # kernel-path
 
-Six weeks, thirty minutes a day, to understand the Apple GPU stack and the kernels people write for it well enough to build your own by directing an AI. Four weeks on Apple silicon, the first of them eight days, and two on NVIDIA for contrast and for the kernels that made news there.
+Six weeks, about two hours a day, to understand the Apple GPU stack and the kernels people write for it well enough to build your own by directing an AI. Four weeks on Apple silicon, the first of them eight days, and two on NVIDIA for contrast and for the kernels that made news there.
 
-Each day is one page in `weeks/`: a short narrative with a citation on every number, the one primary source to read, the numbers to remember, and five questions. You write your answers at the bottom of the page and run `/learn read weeks/wN/dM.md` to have them checked and turned into cards. Nothing to install until you choose to run something.
+Each day is one page in `weeks/`: a narrative with a citation on every number, a worked example, the numbers to remember, an ordered two-hour reading plan with minutes and what to look for in each source, and seven questions, two of which need the deeper sources. You write your answers at the bottom of the page and run `/learn read weeks/wN/dM.md` to have them checked and turned into cards. Nothing to install until you choose to run something.
 
 ## The thirty days
 

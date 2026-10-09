@@ -1,6 +1,6 @@
 # kernel-path (v2)
 
-Six weeks of reading, one page per day in `weeks/wN/dM.md`, to understand the Apple GPU stack and the
+Six weeks of reading, about two hours a day, one page per day in `weeks/wN/dM.md`, to understand the Apple GPU stack and the
 kernels people write for it, then NVIDIA for contrast, well enough to direct an AI to build kernels.
 The ten-week build plan this replaced is on the `v1` branch.
 
