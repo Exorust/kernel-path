@@ -30,11 +30,11 @@
 - [ ] w4 d5 · Capstone brief (written)
 
 **Week 5**
-- [ ] w5 d1 · NVIDIA architecture against Apple
-- [ ] w5 d2 · CUDA, PTX, SASS, Triton, CUTLASS
-- [ ] w5 d3 · The matmul ladder on NVIDIA
-- [ ] w5 d4 · Hopper: TMA, wgmma, the H100 worklog
-- [ ] w5 d5 · Low precision and Blackwell
+- [ ] w5 d1 · NVIDIA architecture against Apple (written)
+- [ ] w5 d2 · CUDA, PTX, SASS, Triton, CUTLASS (written)
+- [ ] w5 d3 · The matmul ladder on NVIDIA (written)
+- [ ] w5 d4 · Hopper: TMA, wgmma, the H100 worklog (written)
+- [ ] w5 d5 · Low precision and Blackwell (written)
 
 **Week 6**
 - [ ] w6 d1 · FlashAttention 1 to 4
