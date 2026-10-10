@@ -14,7 +14,7 @@ in the "Your answers" section of the same file. He then runs `/learn read weeks/
   (`weeks/w4/brief.md`, `weeks/w6/brief.md`), no code.
 
 ## Sources
-Every number on a page carries a link. The research packs behind the pages are in `research/wN.md`
+Every number on a page carries a link. The research packs behind the pages are in `research/wN.md` and, for the famous-sources sweep of 2026-10-10, `research/07-*.md` to `research/12-*.md` with `research/SYNTHESIS.md` as the map
 with verbatim quotes and the gaps each agent reported. If a claim is challenged, check the pack, then
 the source; do not answer from memory. Dates matter: several gaps closed while the course was written
 (MLX attention backward merged 2026-09-29; small-batch qmv merges 2026-10-04 and 10-06). Re-check any
